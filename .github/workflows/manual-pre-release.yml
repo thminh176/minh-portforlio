@@ -1,0 +1,75 @@
+name: Manual Pre-Release Suite
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for running full pre-release suite'
+        required: false
+        default: 'Manual pre-release audit'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pre-release-audit:
+    name: Full Pre-Release Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.11.2
+          run_install: false
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit tracked files & secrets
+        run: pnpm run check:secrets
+
+      - name: Run secret scanner self-checks
+        run: pnpm run test:secrets
+
+      - name: Test contact API & validation mocks (117 assertions)
+        run: pnpm run test:contact
+
+      - name: Lint source & scripts
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Build static export
+        run: pnpm build
+
+      - name: Validate static export smoke checks
+        run: pnpm run smoke:export
+
+      - name: Isolated Cloudflare Pages runtime verification
+        run: pnpm run test:pages
+
+      - name: Isolated Pages failure-paths verification
+        run: pnpm run test:pages:failure-paths
+
+      - name: Test enabled contact form browser flow
+        run: pnpm run test:contact:browser
+
+      - name: Comprehensive browser verification suite
+        run: pnpm run test:browser
+
+      - name: Lighthouse mobile and desktop (local metadata mode; restores preview)
+        run: pnpm run test:lighthouse
