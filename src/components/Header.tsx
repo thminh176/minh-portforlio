@@ -17,6 +17,7 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
   const dict = getDictionary(locale);
   const profile = locale === 'vi' ? profileConfig.vi : profileConfig.en;
   const name = profile.name;
+  const role = profile.role;
 
   const isVi = locale === 'vi';
   const otherLocale = isVi ? 'en' : 'vi';
@@ -43,9 +44,13 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
   }, [mobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-primary)]/85 border-b border-[var(--border-subtle)] transition-colors">
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between">
-        {/* Logo / Monogram */}
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[var(--bg-primary)]/85 border-b border-[var(--border-subtle)] transition-colors lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-64 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-[#263539] lg:bg-[var(--color-dark)] lg:text-[var(--color-dark-copy)]">
+      {/* =========================================================================
+          Mobile / Tablet Top Bar (< lg: 0px – 1023px)
+          Preserved for U03; minimal breakpoint bridge to lg:
+          ========================================================================= */}
+      <div className="lg:hidden max-w-5xl mx-auto px-4 sm:px-8 h-20 flex items-center justify-between">
+        {/* Mobile Logo / Monogram */}
         <Link
           href={`/${locale}/`}
           className="flex items-center gap-3 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] p-1"
@@ -59,47 +64,8 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium" aria-label={dict.common.mainNavigation}>
-          <Link
-            href={`/${locale}/`}
-            className={`transition-colors py-2 px-1 border-b-2 ${
-              activeRoute === 'home'
-                ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
-                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {dict.common.home}
-          </Link>
-          <Link
-            href={`/${locale}/about/`}
-            className={`transition-colors py-2 px-1 border-b-2 ${
-              activeRoute === 'about'
-                ? 'border-[var(--accent-primary)] text-[var(--accent-primary)]'
-                : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {dict.common.about}
-          </Link>
-
-          <div className="h-5 w-px bg-[var(--border-subtle)]" aria-hidden="true" />
-
-          {/* Language Switch */}
-          <Link
-            href={targetOtherPath}
-            onClick={handleLocaleSwitch}
-            className="min-h-[44px] min-w-[44px] px-3.5 flex items-center justify-center rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-xs font-semibold text-[var(--accent-primary)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-colors"
-            aria-label={dict.common.switchLanguage}
-          >
-            {dict.common.switchLanguage}
-          </Link>
-
-          {/* Theme Toggle */}
-          <ThemeToggle locale={locale} />
-        </nav>
-
-        {/* Mobile Action Controls */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* Mobile Action Controls (Preserved for U03 cleanup) */}
+        <div className="flex items-center gap-2">
           <ThemeToggle locale={locale} />
 
           <button
@@ -131,12 +97,13 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
       {mobileMenuOpen && (
         <div
           id="mobile-navigation"
-          className="md:hidden border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-6 space-y-4 shadow-xl transition-all"
+          className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] px-6 py-6 space-y-4 shadow-xl transition-all"
         >
           <nav className="flex flex-col space-y-2 text-base font-medium" aria-label={dict.common.mobileMenu}>
             <Link
               href={`/${locale}/`}
               onClick={() => setMobileMenuOpen(false)}
+              aria-current={activeRoute === 'home' ? 'page' : undefined}
               className={`min-h-[44px] flex items-center px-4 rounded-lg transition-colors ${
                 activeRoute === 'home'
                   ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold'
@@ -148,6 +115,7 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
             <Link
               href={`/${locale}/about/`}
               onClick={() => setMobileMenuOpen(false)}
+              aria-current={activeRoute === 'about' ? 'page' : undefined}
               className={`min-h-[44px] flex items-center px-4 rounded-lg transition-colors ${
                 activeRoute === 'about'
                   ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold'
@@ -155,6 +123,13 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
               }`}
             >
               {dict.common.about}
+            </Link>
+            <Link
+              href={`/${locale}/#contact`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="min-h-[44px] flex items-center px-4 rounded-lg transition-colors text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
+            >
+              {dict.common.contact}
             </Link>
           </nav>
 
@@ -169,12 +144,92 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
                 setMobileMenuOpen(false);
               }}
               className="min-h-[44px] min-w-[44px] px-4 flex items-center justify-center rounded-lg bg-[var(--bg-surface)] text-xs font-semibold text-[var(--accent-primary)] border border-[var(--border-subtle)]"
+              aria-label={dict.common.switchLanguage}
             >
               {dict.common.switchLanguage}
             </Link>
           </div>
         </div>
       )}
+
+      {/* =========================================================================
+          Desktop Graphite Editorial Left Rail (>= lg: 1024px+)
+          Fixed editorial identity & navigation rail matching wrapper offset
+          ========================================================================= */}
+      <div className="hidden lg:flex lg:flex-col lg:justify-between lg:h-full lg:p-6">
+        {/* Top: Identity & Authentic Profile */}
+        <div className="space-y-6">
+          <Link
+            href={`/${locale}/`}
+            className="group block space-y-3 rounded-lg p-1 -m-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            aria-label={`${name} — ${dict.common.home}`}
+          >
+            {/* Monogram Box */}
+            <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/15 flex items-center justify-center font-mono font-bold text-sm text-[var(--color-brick)] group-hover:border-[var(--color-brick)] transition-colors shadow-sm">
+              DTM
+            </div>
+
+            {/* Authentic Identity */}
+            <div className="space-y-1">
+              <div className="font-display font-bold text-lg text-white tracking-tight leading-snug group-hover:text-[var(--color-dark-copy)] transition-colors">
+                {name}
+              </div>
+              <div className="font-mono text-xs text-[var(--color-dark-copy)]/70 uppercase tracking-wider">
+                {role}
+              </div>
+            </div>
+          </Link>
+
+          {/* Ledger divider line */}
+          <div className="h-px w-full bg-white/10" aria-hidden="true" />
+
+          {/* Editorial Typographic Navigation */}
+          <nav className="flex flex-col space-y-1" aria-label={dict.common.mainNavigation}>
+            <Link
+              href={`/${locale}/`}
+              aria-current={activeRoute === 'home' ? 'page' : undefined}
+              className={`flex items-center min-h-[44px] px-3 rounded-md text-sm transition-colors border-l-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] ${
+                activeRoute === 'home'
+                  ? 'border-[var(--color-brick)] bg-white/10 text-white font-semibold'
+                  : 'border-transparent text-[var(--color-dark-copy)]/80 hover:text-white hover:bg-white/5 font-medium'
+              }`}
+            >
+              {dict.common.home}
+            </Link>
+
+            <Link
+              href={`/${locale}/about/`}
+              aria-current={activeRoute === 'about' ? 'page' : undefined}
+              className={`flex items-center min-h-[44px] px-3 rounded-md text-sm transition-colors border-l-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] ${
+                activeRoute === 'about'
+                  ? 'border-[var(--color-brick)] bg-white/10 text-white font-semibold'
+                  : 'border-transparent text-[var(--color-dark-copy)]/80 hover:text-white hover:bg-white/5 font-medium'
+              }`}
+            >
+              {dict.common.about}
+            </Link>
+
+            <Link
+              href={`/${locale}/#contact`}
+              className="flex items-center min-h-[44px] px-3 rounded-md text-sm transition-colors border-l-2 border-transparent text-[var(--color-dark-copy)]/80 hover:text-white hover:bg-white/5 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            >
+              {dict.common.contact}
+            </Link>
+          </nav>
+        </div>
+
+        {/* Bottom: Utilities & Locale Switch */}
+        <div className="pt-6 border-t border-white/10">
+          <Link
+            href={targetOtherPath}
+            onClick={handleLocaleSwitch}
+            className="min-h-[44px] w-full px-3.5 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-xs font-semibold text-[var(--color-dark-copy)] hover:text-white border border-white/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            aria-label={dict.common.switchLanguage}
+          >
+            {dict.common.switchLanguage}
+          </Link>
+        </div>
+      </div>
     </header>
   );
 }

@@ -88,7 +88,7 @@ export default async function LocaleRootLayout({
       </head>
       <body>
         <JsonLd locale={locale} />
-        <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors">
+        <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors lg:pl-64">
           <SkipLink locale={locale} />
           {children}
         </div>
