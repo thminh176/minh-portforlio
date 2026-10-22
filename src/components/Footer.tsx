@@ -14,25 +14,14 @@ export default function Footer({ locale }: FooterProps) {
   const publishedSocials = getPublishedSocialLinks();
 
   return (
-    <footer className="w-full border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] py-10 transition-colors">
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-[var(--text-secondary)]">
-        {/* Moniker & Copyright */}
-        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
-          <span className="font-medium text-xs text-[var(--accent-primary)]">
-            {profileConfig.domain}
-          </span>
-          <span className="hidden sm:inline text-[var(--border-strong)]" aria-hidden="true">•</span>
-          <span className="text-xs text-[var(--text-muted)]">
-            © {currentYear} {profile.name}. {dict.common.footerCopyright}
-          </span>
-        </div>
-
-        {/* Footer Navigation & Published Contact Links */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+    <footer className="w-full border-t border-[var(--color-border)] bg-[var(--color-paper)] text-[var(--color-ink)] transition-colors">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-10 sm:py-12 flex flex-col gap-8">
+        {/* Upper Ledger: Direct Contacts & Site Navigation */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-6 border-b border-[var(--color-border)]">
           {publishedSocials.length > 0 && (
             <div
               role="group"
-              className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-4 text-xs"
+              className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs"
               aria-label={locale === 'vi' ? 'Thông tin liên hệ trực tiếp' : 'Direct contact details'}
             >
               {publishedSocials.map((social) => {
@@ -44,30 +33,54 @@ export default function Footer({ locale }: FooterProps) {
                     key={social.id}
                     href={social.href}
                     {...(!isNativeProtocol ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors min-h-[44px] flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] rounded px-1"
+                    className="text-xs text-[var(--text-secondary)] hover:text-[var(--color-brick-deep)] transition-colors min-h-[44px] inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-paper)] rounded-xs py-1"
                   >
-                    <span className="font-semibold text-[var(--text-primary)]">{label}:</span>
-                    <span className="break-all">{social.value || social.href}</span>
+                    <span className="font-medium text-[var(--color-ink)] whitespace-nowrap">{label}:</span>
+                    <span className="break-all font-mono text-[11px] sm:text-xs text-[var(--text-secondary)]">
+                      {social.value || social.href}
+                    </span>
                   </a>
                 );
               })}
             </div>
           )}
 
-          <nav className="flex items-center gap-6 text-xs font-medium" aria-label={locale === 'vi' ? 'Liên kết chân trang' : 'Footer navigation'}>
+          <nav
+            className="flex items-center gap-6 text-xs font-medium"
+            aria-label={locale === 'vi' ? 'Liên kết chân trang' : 'Footer navigation'}
+          >
             <Link
               href={`/${locale}/`}
-              className="hover:text-[var(--accent-primary)] transition-colors min-h-[44px] flex items-center focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] rounded px-1"
+              className="text-[var(--color-ink)] hover:text-[var(--color-brick-deep)] transition-colors min-h-[44px] inline-flex items-center whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-paper)] rounded-xs py-1"
             >
               {dict.common.home}
             </Link>
             <Link
               href={`/${locale}/about/`}
-              className="hover:text-[var(--accent-primary)] transition-colors min-h-[44px] flex items-center focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] rounded px-1"
+              className="text-[var(--color-ink)] hover:text-[var(--color-brick-deep)] transition-colors min-h-[44px] inline-flex items-center whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-paper)] rounded-xs py-1"
             >
               {dict.common.about}
             </Link>
           </nav>
+        </div>
+
+        {/* Lower Ledger: Colophon & Copyright */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-[var(--text-secondary)]">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-left">
+            <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-brick-deep)]">
+              {profileConfig.domain}
+            </span>
+            <span className="text-[var(--color-border)] select-none" aria-hidden="true">
+              /
+            </span>
+            <span className="text-xs text-[var(--text-secondary)]">
+              {profile.name} · {profile.role}
+            </span>
+          </div>
+
+          <div className="text-xs text-[var(--text-secondary)] leading-relaxed">
+            © {currentYear} {profile.name}. {dict.common.footerCopyright}
+          </div>
         </div>
       </div>
     </footer>
