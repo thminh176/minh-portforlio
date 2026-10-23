@@ -2,6 +2,7 @@ import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import FeaturedMcpProject from '@/components/FeaturedMcpProject';
 import FeaturedPortfolioProject from '@/components/FeaturedPortfolioProject';
+import JournalIntro from '@/components/JournalIntro';
 import Footer from '@/components/Footer';
 import ContactForm from '@/components/ContactForm';
 import DirectContact from '@/components/DirectContact';
@@ -49,7 +50,10 @@ export default async function HomePage({
           </div>
         </section>
 
-        {/* 3. Contact Section */}
+        {/* 3. Journal Section */}
+        <JournalIntro locale={locale} />
+
+        {/* 4. Contact Section */}
         <section id="contact" className="space-y-8 scroll-mt-24">
           <div className="text-center space-y-3 max-w-xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[var(--bg-surface)] text-[var(--accent-primary)] border border-[var(--border-strong)]">

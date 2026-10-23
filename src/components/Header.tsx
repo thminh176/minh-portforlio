@@ -22,6 +22,9 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
   const otherLocale = isVi ? 'en' : 'vi';
   const targetOtherPath = activeRoute === 'about' ? `/${otherLocale}/about/` : `/${otherLocale}/`;
 
+  const workLabel = isVi ? 'Dự án' : 'Work';
+  const journalLabel = isVi ? 'Ghi chép' : 'Journal';
+
   const handleLocaleSwitch = () => {
     try {
       localStorage.setItem('dtm_locale', otherLocale);
@@ -122,6 +125,20 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
               {dict.common.home}
             </Link>
             <Link
+              href={`/${locale}/#work`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="min-h-[44px] flex items-center px-4 rounded-md text-sm sm:text-base font-medium transition-colors border-l-2 border-transparent text-[var(--color-ink)] hover:bg-[var(--color-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            >
+              {workLabel}
+            </Link>
+            <Link
+              href={`/${locale}/#journal`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="min-h-[44px] flex items-center px-4 rounded-md text-sm sm:text-base font-medium transition-colors border-l-2 border-transparent text-[var(--color-ink)] hover:bg-[var(--color-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            >
+              {journalLabel}
+            </Link>
+            <Link
               href={`/${locale}/about/`}
               onClick={() => setMobileMenuOpen(false)}
               aria-current={activeRoute === 'about' ? 'page' : undefined}
@@ -204,6 +221,20 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
               }`}
             >
               {dict.common.home}
+            </Link>
+
+            <Link
+              href={`/${locale}/#work`}
+              className="flex items-center min-h-[44px] px-3 rounded-md text-sm transition-colors border-l-2 border-transparent text-[var(--color-dark-copy)]/80 hover:text-white hover:bg-white/5 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            >
+              {workLabel}
+            </Link>
+
+            <Link
+              href={`/${locale}/#journal`}
+              className="flex items-center min-h-[44px] px-3 rounded-md text-sm transition-colors border-l-2 border-transparent text-[var(--color-dark-copy)]/80 hover:text-white hover:bg-white/5 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+            >
+              {journalLabel}
             </Link>
 
             <Link
