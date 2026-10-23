@@ -1076,8 +1076,8 @@ async function runBrowserVerification() {
         path: '/vi/about/',
         name: 'about-vi',
         expectedIdentity: 'Đàm Thiên Minh',
-        expectedServices: 'Những công nghệ tôi đã làm việc cùng',
-        expectedProcess: 'Tôi đang học thêm',
+        expectedServices: 'Những công nghệ mình đã làm việc cùng',
+        expectedProcess: 'Mình đang học thêm',
         expectedCta: 'Bạn cần trao đổi về website?',
       },
       {
@@ -1091,6 +1091,8 @@ async function runBrowserVerification() {
     ];
 
     const obsoleteOrInflatedClaims = [
+      'Codex',
+      'Antigravity',
       'Quy trình làm việc với AI',
       'Working with AI tools',
       'Công nghệ dùng trong website',
@@ -1129,7 +1131,7 @@ async function runBrowserVerification() {
 
       for (const term of obsoleteOrInflatedClaims) {
         if (renderedText.includes(term)) {
-          throw new Error(`Rendered text violation on ${item.path}: found obsolete heading or inflated claim "${term}"!`);
+          throw new Error(`Rendered text violation on ${item.path}: found obsolete copy or inflated claim "${term}"!`);
         }
       }
 
@@ -1146,8 +1148,8 @@ async function runBrowserVerification() {
 
       if (item.path.includes('/about/')) {
         const requiredAboutTerms = item.path.startsWith('/vi/')
-          ? ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Codex', 'Antigravity', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']
-          : ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Codex', 'Antigravity', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8'];
+          ? ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']
+          : ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8'];
         for (const term of requiredAboutTerms) {
           if (!renderedText.includes(term)) {
             throw new Error(`Rendered text violation on ${item.path}: missing approved portfolio content "${term}"!`);

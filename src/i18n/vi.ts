@@ -72,8 +72,8 @@ export const viDictionary: Dictionary = {
     ],
     aboutPreviewTitle: 'Về Đàm Thiên Minh',
     aboutPreviewText:
-      'Tôi tham gia từ việc làm rõ yêu cầu đến kiểm thử, triển khai và bảo trì ứng dụng web, với AI hỗ trợ trong quá trình phát triển.',
-    learnMore: 'Xem thêm về cách làm việc',
+      'Mình là Minh. Ở đây có các dự án cá nhân và ghi chép về quá trình mình học, làm web.',
+    learnMore: 'Tìm hiểu thêm về mình',
     contactTitle: 'Liên hệ',
     contactSubtitle:
       'Trao đổi về nhu cầu làm website hoặc dự án sắp tới của bạn.',
@@ -82,38 +82,38 @@ export const viDictionary: Dictionary = {
     badge: 'Giới thiệu',
     title: 'Giới thiệu về Đàm Thiên Minh',
     lead:
-      'Web Developer có kinh nghiệm thực tế với ứng dụng web và hạ tầng triển khai, đang học thêm về backend và DevOps.',
-    approachTitle: 'Những công nghệ tôi đã làm việc cùng',
+      'Mình làm web và đang học thêm về backend, DevOps.',
+    approachTitle: 'Những công nghệ mình đã làm việc cùng',
     approachSubtitle:
-      'Kinh nghiệm thực tế trong phát triển, triển khai và vận hành ứng dụng.',
+      'Các công nghệ và dự án mình đã làm việc cùng.',
     approachPoints: [
       {
         title: 'Ứng dụng web',
         description:
-          'Next.js cho website và ứng dụng phục vụ doanh nghiệp; tham gia xác định yêu cầu, rà soát và kiểm thử.',
+          'Mình đã làm việc với ứng dụng Next.js, từ xác định yêu cầu đến rà soát và kiểm thử.',
       },
       {
         title: 'Triển khai và hạ tầng',
         description:
-          'Ubuntu Server, Docker, PostgreSQL và Cloudflare; cấu hình môi trường, quản lý tên miền và bảo trì ứng dụng.',
+          'Mình cấu hình môi trường Ubuntu Server, làm việc với Docker, PostgreSQL, Cloudflare và quản lý tên miền.',
       },
       {
-        title: 'AI hỗ trợ phát triển',
+        title: 'Dự án cá nhân',
         description:
-          'Codex và Antigravity hỗ trợ viết mã. Tôi định hướng yêu cầu, rà soát kết quả và kiểm tra ứng dụng.',
+          'Mình chia sẻ mã nguồn MCP Project Assistant và portfolio cá nhân trong hai repo mcp-project-assistant và minh-portforlio.',
       },
     ],
-    servicesTitle: 'Tôi đang học thêm',
+    servicesTitle: 'Mình đang học thêm',
     servicesSubtitle:
       'Xây nền tảng để phát triển theo hướng backend và DevOps.',
     servicesText: [
-      'Tôi đang học Java ở mức nền tảng, gồm cú pháp và lập trình hướng đối tượng (OOP), cùng các nguyên tắc phát triển backend. Spring Boot là hướng tìm hiểu tiếp theo, chưa phải kinh nghiệm làm việc hiện tại.',
-      'Tôi tiếp tục học quản trị Linux và DevOps, dựa trên kinh nghiệm triển khai và vận hành đã có.',
-      'Tôi đã hoàn thành các khóa F8: Nhập môn Công nghệ thông tin, HTML & CSS, JavaScript cơ bản và JavaScript nâng cao. Đây là chứng nhận hoàn thành khóa học, không phải chứng chỉ nghề nghiệp hay khẳng định trình độ chuyên sâu.',
+      'Mình đang học Java ở mức nền tảng, gồm cú pháp và lập trình hướng đối tượng (OOP), cùng các nguyên tắc phát triển backend. Spring Boot là hướng tìm hiểu tiếp theo, chưa phải kinh nghiệm làm việc hiện tại.',
+      'Mình tiếp tục học quản trị Linux và DevOps, dựa trên kinh nghiệm triển khai và vận hành đã có.',
+      'Mình đã hoàn thành các khóa F8: Nhập môn Công nghệ thông tin, HTML & CSS, JavaScript cơ bản và JavaScript nâng cao. Đây là chứng nhận hoàn thành khóa học, không phải chứng chỉ nghề nghiệp hay khẳng định trình độ chuyên sâu.',
     ],
     contactCtaTitle: 'Bạn cần trao đổi về website?',
     contactCtaSubtitle:
-      'Gửi tin nhắn cho tôi về nội dung bạn dự định làm để chúng ta bắt đầu trao đổi.',
+      'Gửi mình câu hỏi hoặc ý tưởng dự án bạn muốn trao đổi.',
     contactCtaButton: 'Trao đổi về website của bạn',
   },
   contactForm: {

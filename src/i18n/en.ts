@@ -72,8 +72,8 @@ export const enDictionary: Dictionary = {
     ],
     aboutPreviewTitle: 'About Thien Minh Dam',
     aboutPreviewText:
-      'My involvement spans requirements, testing, deployment and maintenance, with AI supporting the development process.',
-    learnMore: 'Read more about my approach',
+      'I am Minh. Here I share personal projects and notes on learning and building for the web.',
+    learnMore: 'More about me',
     contactTitle: 'Contact',
     contactSubtitle:
       'Get in touch to discuss your website needs or upcoming project.',
@@ -82,25 +82,25 @@ export const enDictionary: Dictionary = {
     badge: 'About',
     title: 'About Thien Minh Dam',
     lead:
-      'A Web Developer with practical experience in web applications and deployment infrastructure, learning more about backend engineering and DevOps.',
+      'I build for the web and am learning more about backend engineering and DevOps.',
     approachTitle: 'Technologies I have worked with',
     approachSubtitle:
-      'Practical experience across development, deployment and application maintenance.',
+      'Technologies and projects I have worked with.',
     approachPoints: [
       {
         title: 'Web applications',
         description:
-          'Next.js websites and business applications, with involvement in requirements, implementation review and testing.',
+          'I have worked with Next.js applications, from defining requirements to reviewing and testing.',
       },
       {
         title: 'Deployment and infrastructure',
         description:
-          'Ubuntu Server, Docker, PostgreSQL and Cloudflare: environment configuration, domain management and application maintenance.',
+          'I configure Ubuntu Server environments, work with Docker, PostgreSQL and Cloudflare, and manage domains.',
       },
       {
-        title: 'AI-assisted development',
+        title: 'Personal projects',
         description:
-          'Codex and Antigravity support coding. I define requirements, review the output and test the application.',
+          'I share the source for MCP Project Assistant and my personal portfolio in the mcp-project-assistant and minh-portforlio repositories.',
       },
     ],
     servicesTitle: 'Currently learning',
@@ -113,7 +113,7 @@ export const enDictionary: Dictionary = {
     ],
     contactCtaTitle: 'Need a website?',
     contactCtaSubtitle:
-      'Send me a note about what you are planning, and we can discuss it from there.',
+      'Send me a question or a project idea you would like to discuss.',
     contactCtaButton: 'Discuss your website',
   },
   contactForm: {

@@ -12,8 +12,8 @@ export default function Hero({ locale }: HeroProps) {
     ? 'Đàm Thiên Minh / Web Developer'
     : 'Thien Minh Dam / Web Developer';
   const supporting = isVi
-    ? 'Mình dùng Codex và Antigravity để hỗ trợ phát triển, từ làm rõ yêu cầu đến kiểm tra và vận hành.'
-    : 'I use Codex and Antigravity to support development, from defining requirements to reviewing and running the result.';
+    ? 'Mình chia sẻ các dự án cá nhân và ghi chép về quá trình học, làm web ở đây.'
+    : 'A place for my personal projects and notes on learning and building for the web.';
   const primaryCta = isVi ? 'Trao đổi với mình' : 'Get in touch';
   const secondaryCta = isVi ? 'Về mình' : 'About me';
 

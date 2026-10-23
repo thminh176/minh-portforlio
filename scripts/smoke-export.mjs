@@ -359,6 +359,12 @@ const obsoleteOrInflatedClaims = [
   'Full-stack Expert',
 ];
 for (const { name, html } of localizedPages) {
+  for (const term of ['Codex', 'Antigravity']) {
+    if (renderedExportText(html).includes(term)) {
+      console.error(`[smoke:export] FAIL: ${name} contains obsolete AI-tool self-description "${term}".`);
+      process.exit(1);
+    }
+  }
   for (const term of obsoleteOrInflatedClaims) {
     if (html.includes(term)) {
       console.error(`[smoke:export] FAIL: ${name} contains obsolete heading or inflated claim "${term}".`);
@@ -367,8 +373,8 @@ for (const { name, html } of localizedPages) {
   }
 }
 for (const [name, html, requiredTerms] of [
-  ['vi/about/index.html', viAboutHtml, ['Những công nghệ tôi đã làm việc cùng', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Codex', 'Antigravity', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']],
-  ['en/about/index.html', enAboutHtml, ['Technologies I have worked with', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Codex', 'Antigravity', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8']],
+  ['vi/about/index.html', viAboutHtml, ['Những công nghệ mình đã làm việc cùng', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']],
+  ['en/about/index.html', enAboutHtml, ['Technologies I have worked with', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8']],
 ]) {
   for (const term of requiredTerms) {
     if (!html.includes(term)) {

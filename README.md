@@ -1,6 +1,6 @@
 # damthienminh.id.vn
 
-Personal bilingual portfolio and website services presentation for **Đàm Thiên Minh** (VI) / **Thien Minh Dam** (EN).
+Bilingual personal portfolio with projects, learning notes, and contact details for **Đàm Thiên Minh** (VI) / **Thien Minh Dam** (EN).
 
 Built with Next.js App Router, React 19, TypeScript, and Tailwind CSS v4. Designed for static HTML export to **Cloudflare Pages Free**.
 

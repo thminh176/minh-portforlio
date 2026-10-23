@@ -22,8 +22,8 @@ export async function generateMetadata({
     ? 'Đàm Thiên Minh — Giới thiệu'
     : 'Thien Minh Dam — About';
   const description = isVi
-    ? 'Tìm hiểu về Đàm Thiên Minh: kinh nghiệm ứng dụng web, hạ tầng triển khai, phát triển với AI và việc học Java, backend, DevOps.'
-    : 'About Thien Minh Dam: web application and infrastructure experience, responsible AI-assisted development, and ongoing Java, backend and DevOps learning.';
+    ? 'Tìm hiểu về Minh, các dự án web cá nhân, kinh nghiệm triển khai và việc học Java, backend, DevOps.'
+    : 'About Minh: personal web projects, deployment experience, and ongoing Java, backend and DevOps learning.';
 
   return {
     metadataBase: new URL(siteConfig.baseUrl),
