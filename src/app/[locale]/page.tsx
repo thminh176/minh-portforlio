@@ -3,6 +3,7 @@ import Hero from '@/components/Hero';
 import FeaturedMcpProject from '@/components/FeaturedMcpProject';
 import FeaturedPortfolioProject from '@/components/FeaturedPortfolioProject';
 import JournalIntro from '@/components/JournalIntro';
+import ContactInvitation from '@/components/ContactInvitation';
 import Footer from '@/components/Footer';
 import ContactForm from '@/components/ContactForm';
 import DirectContact from '@/components/DirectContact';
@@ -52,6 +53,9 @@ export default async function HomePage({
 
         {/* 3. Journal Section */}
         <JournalIntro locale={locale} />
+
+        {/* Contact Invitation */}
+        <ContactInvitation locale={locale} />
 
         {/* 4. Contact Section */}
         <section id="contact" className="space-y-8 scroll-mt-24">
