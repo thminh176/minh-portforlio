@@ -77,10 +77,6 @@ if (!viHtml.includes('dtm_theme')) {
   console.error('[smoke:export] FAIL: vi/index.html missing synchronous pre-paint theme script.');
   process.exit(1);
 }
-if (!viHtml.includes('DTM Monogram Visual')) {
-  console.error('[smoke:export] FAIL: vi/index.html missing DTM SVG monogram visual.');
-  process.exit(1);
-}
 if (!viHtml.includes('data-status="needs_configuration"')) {
   console.error('[smoke:export] FAIL: vi/index.html missing data-status="needs_configuration".');
   process.exit(1);
@@ -315,14 +311,35 @@ for (const html of allHtmlFiles) {
 }
 
 
-// 11b. Verify presence of website services and engagement process in exported HTML
-if (!viHtml.includes('Dịch vụ làm website') || !viHtml.includes('Các bước làm việc')) {
-  console.error('[smoke:export] FAIL: vi/index.html missing website services or engagement process sections.');
-  process.exit(1);
+// 11b. Accepted V2 narrative and both verified source projects (U08).
+// Read actual HTML text, excluding scripts so serialized React data cannot satisfy it.
+function renderedExportText(html) {
+  return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ').replace(/&(?:#x27|#39|apos);/g, "'")
+    .replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 }
-if (!enHtml.includes('Website services') || !enHtml.includes('How we work together')) {
-  console.error('[smoke:export] FAIL: en/index.html missing website services or engagement process sections.');
-  process.exit(1);
+for (const [name, html, heading, portfolio] of [
+  ['vi/index.html', viHtml, 'Mình làm web. Đây là những gì mình đang xây.', 'Portfolio cá nhân'],
+  ['en/index.html', enHtml, "I build for the web. Here's what I'm working on.", 'Personal portfolio'],
+]) {
+  const headings = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)];
+  if (headings.length !== 1 || renderedExportText(headings[0][1]) !== heading) {
+    console.error(`[smoke:export] FAIL: ${name} must contain one coherent V2 narrative H1.`);
+    process.exit(1);
+  }
+  const work = html.match(/<section\b[^>]*id="work"[^>]*>([\s\S]*?)<\/section>/)?.[1] || '';
+  for (const term of ['MCP Project Assistant', portfolio, 'TypeScript', 'Next.js', 'Cloudflare Pages']) {
+    if (!renderedExportText(work).includes(term)) {
+      console.error(`[smoke:export] FAIL: ${name} missing verified work content "${term}".`);
+      process.exit(1);
+    }
+  }
+  for (const repository of ['mcp-project-assistant', 'minh-portforlio']) {
+    if (!work.includes(`href="https://github.com/thminh176/${repository}"`)) {
+      console.error(`[smoke:export] FAIL: ${name} missing verified source URL for ${repository}.`);
+      process.exit(1);
+    }
+  }
 }
 
 // 11c. Reject obsolete headings and inflated positioning; confirmed experience

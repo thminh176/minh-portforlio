@@ -10,6 +10,12 @@ import {
 
 const outDir = path.resolve('out');
 const evidenceDir = path.resolve('reports/browser-evidence');
+// U01's approved font assets are presentation resources. Match declarations as
+// well as method, resource type, origin and family; scripts/fetch/beacons fail.
+const declaredFontUrls = new Set(
+  [...fs.readFileSync(path.resolve('src/app/globals.css'), 'utf8')
+    .matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map((match) => match[1])
+);
 
 if (!fs.existsSync(outDir)) {
   console.error('[verify-browser] Error: out/ directory does not exist. Run pnpm build first.');
@@ -44,6 +50,7 @@ async function runBrowserVerification() {
       args: ['--no-sandbox', '--disable-gpu'],
     });
 
+    const deferredFailures = [];
     const context = await browser.newContext();
     const page = await context.newPage();
 
@@ -55,7 +62,7 @@ async function runBrowserVerification() {
     const matrixRoutes = ['/vi/', '/en/', '/vi/about/', '/en/about/'];
     const matrixThemes = ['dark', 'light'];
     const matrixViewports = [
-      { name: 'mobile-360', width: 360, height: 640 },
+      { name: 'mobile-320', width: 320, height: 640 },
       { name: 'mobile-390', width: 390, height: 844 },
       { name: 'tablet-768', width: 768, height: 1024 },
       { name: 'desktop-1280', width: 1280, height: 800 },
@@ -95,6 +102,8 @@ async function runBrowserVerification() {
             }
           }
 
+          await assertPaper(pageMatrix, `${r} ${th} ${vp.name}`);
+
           if (domState.hasHorizontalScroll) {
             throw new Error(
               `Horizontal overflow detected on ${r} (${th}, ${vp.name}): scrollWidth=${domState.scrollWidth}, clientWidth=${domState.clientWidth}`
@@ -133,29 +142,28 @@ async function runBrowserVerification() {
     await page.goto(`${baseUrl}/en/`, { waitUntil: 'domcontentloaded' });
     await page.locator('h1').waitFor({ state: 'visible' });
 
-    const orderCheck = await page.evaluate(() => {
-      const heading = document.querySelector('h1');
-      const visual = document.querySelector('svg[aria-label*="DTM Monogram Visual"]');
-      if (!heading || !visual) return { found: false };
-
-      const headingRect = heading.getBoundingClientRect();
-      const visualRect = visual.getBoundingClientRect();
-
-      return {
-        found: true,
-        headingY: headingRect.y,
-        visualY: visualRect.y,
-        isHeadingAboveVisual: headingRect.y < visualRect.y,
-      };
-    });
-
-    if (!orderCheck.found) {
-      throw new Error('Could not find h1 or DTM visual element on mobile viewport');
+    for (const locale of ['en', 'vi']) {
+      await page.goto(`${baseUrl}/${locale}/`, { waitUntil: 'networkidle' });
+      const narrative = await page.evaluate(() => {
+        const main = document.querySelector('main');
+        const hero = main?.querySelector('section');
+        const heading = hero?.querySelector('h1');
+        const supporting = hero?.querySelector('p');
+        const cta = hero?.querySelector('a[href="#contact"]');
+        return {
+          count: document.querySelectorAll('h1').length,
+          text: heading?.textContent.replace(/\s+/g, ' ').trim(),
+          order: !!heading && !!supporting && !!cta &&
+            heading.getBoundingClientRect().bottom <= supporting.getBoundingClientRect().top &&
+            supporting.getBoundingClientRect().bottom <= cta.getBoundingClientRect().top,
+        };
+      });
+      const expected = locale === 'vi' ? 'Mình làm web. Đây là những gì mình đang xây.' : "I build for the web. Here's what I'm working on.";
+      if (narrative.count !== 1 || narrative.text !== expected || !narrative.order) {
+        throw new Error(`V2 Hero narrative/order failed /${locale}/: ${JSON.stringify(narrative)}`);
+      }
     }
-    if (!orderCheck.isHeadingAboveVisual) {
-      throw new Error(`Mobile visual order inverted! Heading Y=${orderCheck.headingY}, Visual Y=${orderCheck.visualY}`);
-    }
-    console.log(`  [PASS] Mobile narrative order confirmed: h1 (Y=${orderCheck.headingY.toFixed(1)}) appears above DTM visual (Y=${orderCheck.visualY.toFixed(1)}).`);
+    console.log('  [PASS] Both localized coherent H1s precede supporting copy and primary contact CTA.');
 
     // =========================================================================
     // Phase 3: Keyboard Skip Link & Landmark Activation
@@ -164,21 +172,32 @@ async function runBrowserVerification() {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`${baseUrl}/en/`, { waitUntil: 'domcontentloaded' });
 
-    await page.keyboard.press('Tab');
-    const skipLink = page.locator('a.skip-link');
+    const skipContext = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const skipPage = await skipContext.newPage();
+    await skipPage.goto(`${baseUrl}/en/`, { waitUntil: 'networkidle' });
+    await skipPage.keyboard.press('Tab');
+    const skipLink = skipPage.locator('a.skip-link');
     await skipLink.waitFor({ state: 'visible' });
 
-    const isSkipFocused = await page.evaluate(() => document.activeElement?.classList.contains('skip-link'));
+    const isSkipFocused = await skipPage.evaluate(() => document.activeElement?.classList.contains('skip-link'));
     if (!isSkipFocused) {
       throw new Error('Initial Tab press failed to focus skip link');
     }
 
-    await page.keyboard.press('Enter');
-    const mainFocused = await page.evaluate(() => document.activeElement?.id === 'main-content');
+    const skipHit = await skipLink.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+    });
+    if (!skipHit) throw new Error('Focused skip link is occluded at its center');
+    await skipPage.screenshot({ path: path.join(evidenceDir, 'skip-link-focused.png') });
+    await skipPage.keyboard.press('Enter');
+    const mainFocused = await skipPage.evaluate(() => document.activeElement?.id === 'main-content');
     if (!mainFocused) {
       throw new Error('Skip link activation did not move focus to #main-content');
     }
     console.log('  [PASS] Skip link received initial focus and Enter successfully transferred focus to #main-content.');
+
+    await skipContext.close();
 
     // =========================================================================
     // Phase 4: Mobile Drawer & Escape Focus Restoration
@@ -189,6 +208,7 @@ async function runBrowserVerification() {
 
     const menuTrigger = page.locator('button[aria-controls="mobile-navigation"]');
     await menuTrigger.waitFor({ state: 'visible' });
+    await page.locator('main').focus();
     await menuTrigger.click();
 
     const mobileNav = page.locator('#mobile-navigation');
@@ -206,146 +226,76 @@ async function runBrowserVerification() {
     console.log('  [PASS] Mobile drawer opened, Escape closed drawer, and focus successfully returned to menu trigger.');
 
     // =========================================================================
-    // Phase 5: Button Interaction & Theme Persistence Before Paint
+    // Phases 5/6: Fixed paper presentation across legacy preferences and events.
+    // The HTML initializer remains legacy; V2 has no theme interaction control.
     // =========================================================================
-    console.log('[verify-browser] Phase 5: Button Interaction & Theme Persistence...');
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${baseUrl}/en/`, { waitUntil: 'domcontentloaded' });
-
-    const initialTheme = await page.evaluate(() => {
-      return {
-        isDark: document.documentElement.classList.contains('dark'),
-        stored: localStorage.getItem('dtm_theme'),
-      };
-    });
-
-    if (!initialTheme.isDark) {
-      throw new Error('Initial document theme must be dark by default');
-    }
-
-    const themeToggle = page.locator('header button[aria-label="Switch to light mode"]').first();
-    await themeToggle.click();
-
-    await page.waitForFunction(() => !document.documentElement.classList.contains('dark'));
-    const switchedTheme = await page.evaluate(() => {
-      return {
-        isDark: document.documentElement.classList.contains('dark'),
-        stored: localStorage.getItem('dtm_theme'),
-      };
-    });
-
-    if (switchedTheme.isDark || switchedTheme.stored !== 'light') {
-      throw new Error(`Theme toggle failed! isDark=${switchedTheme.isDark}, stored=${switchedTheme.stored}`);
-    }
-
-    // Reload page to verify persistence before paint
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    const reloadedTheme = await page.evaluate(() => {
-      return {
-        isDark: document.documentElement.classList.contains('dark'),
-        stored: localStorage.getItem('dtm_theme'),
-      };
-    });
-
-    if (reloadedTheme.isDark || reloadedTheme.stored !== 'light') {
-      throw new Error(`Theme persistence failed on reload! isDark=${reloadedTheme.isDark}, stored=${reloadedTheme.stored}`);
-    }
-
-    // Toggle back to dark
-    const lightToggle = page.locator('header button[aria-label="Switch to dark mode"]').first();
-    await lightToggle.click();
-    await page.waitForFunction(() => document.documentElement.classList.contains('dark'));
-    console.log('  [PASS] 5a: Theme toggled to light, persisted across full page reload, and toggled back to dark.');
-
-    // 5b. Corrupted stored theme fallback to dark
-    await page.evaluate(() => {
-      localStorage.setItem('dtm_theme', 'corrupt_unexpected_value');
-    });
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    const corruptThemeResult = await page.evaluate(() => ({
-      isDark: document.documentElement.classList.contains('dark'),
-      colorScheme: document.documentElement.style.colorScheme,
-    }));
-    if (!corruptThemeResult.isDark || corruptThemeResult.colorScheme !== 'dark') {
-      throw new Error(`Corrupted theme value failed to fall back to dark! isDark=${corruptThemeResult.isDark}, colorScheme=${corruptThemeResult.colorScheme}`);
-    }
-    console.log('  [PASS] 5b: Corrupted stored theme value safely fell back to default dark mode.');
-
-    // 5c. Theme persists across VI/EN root layout crossings
-    await page.evaluate(() => {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.style.colorScheme = 'light';
-      localStorage.setItem('dtm_theme', 'light');
-    });
-    for (const crossRoute of ['/vi/', '/en/', '/vi/about/', '/en/about/']) {
-      await page.goto(`${baseUrl}${crossRoute}`, { waitUntil: 'domcontentloaded' });
-      const crossTheme = await page.evaluate(() => ({
-        isDark: document.documentElement.classList.contains('dark'),
-        colorScheme: document.documentElement.style.colorScheme,
-        stored: localStorage.getItem('dtm_theme'),
+    async function assertPaper(p, label) {
+      const state = await p.evaluate(() => ({
+        body: getComputedStyle(document.body).backgroundColor,
+        scheme: getComputedStyle(document.body).colorScheme,
+        controls: [...document.querySelectorAll('input, textarea, select')].map((el) => getComputedStyle(el).colorScheme),
+        toggles: document.querySelectorAll('button[aria-label="Switch to light mode"], button[aria-label="Switch to dark mode"]').length,
       }));
-      if (crossTheme.isDark || crossTheme.colorScheme !== 'light' || crossTheme.stored !== 'light') {
-        throw new Error(`Theme persistence failed across root layout crossing to ${crossRoute}: isDark=${crossTheme.isDark}, colorScheme=${crossTheme.colorScheme}`);
+      if (state.body !== 'rgb(245, 244, 239)' || state.scheme !== 'light' || state.controls.some((scheme) => scheme !== 'light') || state.toggles) {
+        throw new Error(`V2 paper/native controls failed ${label}: ${JSON.stringify(state)}`);
       }
     }
-    console.log('  [PASS] 5c: Light theme strictly persisted across VI/EN root layout crossings.');
-
-    // Observe the first animation-frame callback with main present, not hardware paint.
-    for (const theme of ['dark', 'light']) {
+    console.log('[verify-browser] Phases 5/6: Fixed paper UI and legacy initializer...');
+    for (const preference of ['dark', 'light', 'corrupt_unexpected_value']) {
+      await page.evaluate((value) => localStorage.setItem('dtm_theme', value), preference);
+      for (const route of matrixRoutes) {
+        await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
+        await assertPaper(page, `${preference} ${route}`);
+        const initialized = await page.evaluate(() => ({ dark: document.documentElement.classList.contains('dark'), scheme: document.documentElement.style.colorScheme }));
+        const expected = preference === 'light' ? 'light' : 'dark';
+        if (initialized.dark !== (expected === 'dark') || initialized.scheme !== expected) {
+          throw new Error(`Legacy initializer failed ${preference} ${route}: ${JSON.stringify(initialized)}`);
+        }
+      }
+      await page.reload({ waitUntil: 'networkidle' });
+      await assertPaper(page, `reload ${preference}`);
+    }
+    // Observe the first animation callback with main present, not hardware paint.
+    for (const preference of ['default', 'dark', 'light']) {
       const initContext = await browser.newContext();
-      await initContext.addInitScript((preference) => {
-        if (preference === 'light') localStorage.setItem('dtm_theme', 'light');
+      await initContext.addInitScript((value) => {
+        if (value === 'default') localStorage.removeItem('dtm_theme');
+        else localStorage.setItem('dtm_theme', value);
         function observe() {
-          if (!document.querySelector('main#main-content')) {
-            requestAnimationFrame(observe);
-            return;
-          }
+          if (!document.querySelector('main#main-content')) return requestAnimationFrame(observe);
           window.__themeFrame = {
             dark: document.documentElement.classList.contains('dark'),
             scheme: document.documentElement.style.colorScheme,
+            body: getComputedStyle(document.body).backgroundColor,
+            bodyScheme: getComputedStyle(document.body).colorScheme,
           };
         }
         requestAnimationFrame(observe);
-      }, theme);
+      }, preference);
       const initPage = await initContext.newPage();
-      await initPage.goto(`${baseUrl}/en/`, { waitUntil: 'domcontentloaded' });
-      await initPage.waitForFunction(() => window.__themeFrame, null, { timeout: 4000 });
+      await initPage.goto(`${baseUrl}/en/`, { waitUntil: 'networkidle' });
+      await initPage.waitForFunction(() => window.__themeFrame);
       const frame = await initPage.evaluate(() => window.__themeFrame);
-      if (frame.dark !== (theme === 'dark') || frame.scheme !== theme) {
-        throw new Error(`Theme frame observation failed (${theme}): ${JSON.stringify(frame)}`);
+      if (frame.dark !== (preference !== 'light') || frame.scheme !== (preference === 'light' ? 'light' : 'dark') || frame.body !== 'rgb(245, 244, 239)' || frame.bodyScheme !== 'light') {
+        throw new Error(`First callback presentation failed ${preference}: ${JSON.stringify(frame)}`);
       }
       await initContext.close();
     }
-    console.log('  [PASS] 5d: Default-dark and stored-light observed at first animation callback with main present; not a hardware-paint/FOUC guarantee.');
-
-    // Reset storage to dark for subsequent tests
-    await page.evaluate(() => {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
-      localStorage.setItem('dtm_theme', 'dark');
-    });
-
-    // =========================================================================
-    // Phase 6: Cross-Tab Theme Synchronization
-    // =========================================================================
-    console.log('[verify-browser] Phase 6: Cross-Tab Theme Synchronization...');
     const pageTab2 = await context.newPage();
     await pageTab2.goto(`${baseUrl}/en/`, { waitUntil: 'networkidle' });
-
-    // Set theme on initial page to trigger browser storage event in pageTab2
-    await page.evaluate(() => {
-      localStorage.setItem('dtm_theme', 'light');
+    await pageTab2.evaluate(() => {
+      window.__themeStorageEvents = [];
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'dtm_theme') window.__themeStorageEvents.push(event.newValue);
+      });
     });
-
-    await pageTab2.waitForFunction(() => !document.documentElement.classList.contains('dark'), null, { timeout: 4000 });
-    console.log('  [PASS] Theme storage event synchronized active state across browser tabs.');
+    for (const value of ['light', 'dark']) {
+      await page.evaluate((preference) => localStorage.setItem('dtm_theme', preference), value);
+      await pageTab2.waitForFunction((preference) => window.__themeStorageEvents.includes(preference), value);
+      await assertPaper(pageTab2, `cross-tab storage ${value}`);
+    }
     await pageTab2.close();
-
-    // Reset to dark
-    await page.evaluate(() => {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('dtm_theme', 'dark');
-    });
+    console.log('  [PASS] Paper body/light native controls stay stable across stored themes, reloads, locale routes and real storage events.');
 
     // =========================================================================
     // Phase 7: Reduced Motion Verification
@@ -487,102 +437,35 @@ async function runBrowserVerification() {
       `  [PASS] 8a: Verified all internal published paths, fragments, and target IDs across all 4 routes (${totalLinksAudited} links audited; mailto/tel checked without activation; zero external requests).`
     );
 
-    // 8b. Click actual CTAs and native navigation: verify settled destination beneath sticky header and in viewport
-    for (const testLoc of ['en', 'vi']) {
-      // 1. Native navigation from home to #services
-      await page.goto(`${baseUrl}/${testLoc}/`, { waitUntil: 'domcontentloaded' });
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(50);
-
-      await page.evaluate(() => {
-        window.location.hash = '#services';
-      });
-      await waitForScrollSettled(page);
-
-      const servicesSettled = await page.evaluate(() => {
-        const header = document.querySelector('header');
-        const target = document.querySelector('#services');
-        if (!header || !target) return null;
-        const hRect = header.getBoundingClientRect();
-        const tRect = target.getBoundingClientRect();
-        return {
-          hash: window.location.hash,
-          headerBottom: hRect.bottom,
-          targetTop: tRect.top,
-          targetBottom: tRect.bottom,
-          viewportHeight: window.innerHeight,
-          isBelowHeader: tRect.top >= hRect.bottom - 2,
-          isInViewport: tRect.top < window.innerHeight && tRect.bottom > hRect.bottom,
-        };
-      });
-
-      if (!servicesSettled || servicesSettled.hash !== '#services' || !servicesSettled.isBelowHeader || !servicesSettled.isInViewport) {
-        throw new Error(`Native navigation to #services failed on /${testLoc}/! Details: ${JSON.stringify(servicesSettled)}`);
-      }
-
-      // 2. Navigation via Hero primary CTA button click to #contact
-      await page.goto(`${baseUrl}/${testLoc}/`, { waitUntil: 'domcontentloaded' });
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(50);
-
-      const heroCta = page.locator(`main#main-content a[href="#contact"]`).first();
-      await heroCta.waitFor({ state: 'visible' });
-      await heroCta.click();
-      await waitForScrollSettled(page);
-
-      const heroCtaSettled = await page.evaluate(() => {
-        const header = document.querySelector('header');
-        const target = document.querySelector('#contact');
-        if (!header || !target) return null;
-        const hRect = header.getBoundingClientRect();
-        const tRect = target.getBoundingClientRect();
-        return {
-          hash: window.location.hash,
-          headerBottom: hRect.bottom,
-          targetTop: tRect.top,
-          targetBottom: tRect.bottom,
-          viewportHeight: window.innerHeight,
-          isBelowHeader: tRect.top >= hRect.bottom - 2,
-          isInViewport: tRect.top < window.innerHeight && tRect.bottom > hRect.bottom,
-        };
-      });
-
-      if (!heroCtaSettled || heroCtaSettled.hash !== '#contact' || !heroCtaSettled.isBelowHeader || !heroCtaSettled.isInViewport) {
-        throw new Error(`Hero CTA click to #contact failed on /${testLoc}/! Details: ${JSON.stringify(heroCtaSettled)}`);
-      }
-
-      // 3. Cross-page navigation from About page CTA to /#contact
-      await page.goto(`${baseUrl}/${testLoc}/about/`, { waitUntil: 'domcontentloaded' });
-      const aboutCta = page.locator(`main#main-content a[href*="#contact"]`).first();
-      await aboutCta.waitFor({ state: 'visible' });
-      await aboutCta.click();
-      await page.waitForURL(`**/${testLoc}/*#contact`);
-      await waitForScrollSettled(page);
-
-      const aboutCtaSettled = await page.evaluate(() => {
-        const header = document.querySelector('header');
-        const target = document.querySelector('#contact');
-        if (!header || !target) return null;
-        const hRect = header.getBoundingClientRect();
-        const tRect = target.getBoundingClientRect();
-        return {
-          hash: window.location.hash,
-          headerBottom: hRect.bottom,
-          targetTop: tRect.top,
-          targetBottom: tRect.bottom,
-          viewportHeight: window.innerHeight,
-          isBelowHeader: tRect.top >= hRect.bottom - 2,
-          isInViewport: tRect.top < window.innerHeight && tRect.bottom > hRect.bottom,
-        };
-      });
-
-      if (!aboutCtaSettled || aboutCtaSettled.hash !== '#contact' || !aboutCtaSettled.isBelowHeader || !aboutCtaSettled.isInViewport) {
-        throw new Error(`About CTA click to #contact failed on /${testLoc}/about/! Details: ${JSON.stringify(aboutCtaSettled)}`);
+    // 8b. Distinguish desktop rail horizontal occlusion from mobile topbar.
+    async function assertAnchor(p, id, label) {
+      await waitForScrollSettled(p);
+      const geometry = await p.evaluate((targetId) => {
+        const header = document.querySelector('header').getBoundingClientRect();
+        const target = document.getElementById(targetId)?.getBoundingClientRect();
+        const rail = matchMedia('(min-width: 1024px)').matches;
+        return { hash: location.hash, rail, header: header.toJSON(), target: target?.toJSON(),
+          visible: !!target && target.top >= (rail ? 0 : header.bottom) - 2 && target.top < innerHeight &&
+            target.bottom > (rail ? 0 : header.bottom) && (!rail || target.left >= header.right - 2) };
+      }, id);
+      if (geometry.hash !== `#${id}` || !geometry.visible) throw new Error(`Anchor geometry failed ${label}: ${JSON.stringify(geometry)}`);
+    }
+    for (const vp of matrixViewports) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      for (const locale of ['en', 'vi']) {
+        await page.goto(`${baseUrl}/${locale}/`, { waitUntil: 'networkidle' });
+        await page.evaluate(() => { location.hash = '#work'; });
+        await assertAnchor(page, 'work', `${locale} ${vp.name} work`);
+        await page.goto(`${baseUrl}/${locale}/`, { waitUntil: 'networkidle' });
+        await page.locator('main a[href="#contact"]').first().click();
+        await assertAnchor(page, 'contact', `${locale} ${vp.name} Hero CTA`);
+        await page.goto(`${baseUrl}/${locale}/about/`, { waitUntil: 'networkidle' });
+        await page.locator('main a[href*="#contact"]').first().click();
+        await page.waitForURL(`**/${locale}/*#contact`);
+        await assertAnchor(page, 'contact', `${locale} ${vp.name} About CTA`);
       }
     }
-    console.log(
-      '  [PASS] 8b: Actual CTA clicks and native navigations verified with settled smooth scroll: destination hash and target geometry visible beneath sticky header and within viewport across both VI and EN routes.'
-    );
+    console.log('  [PASS] Work anchors and actual Home/About contact CTAs clear mobile topbar and desktop rail across both locales and all widths.');
 
     // =========================================================================
     // Phase 9: Public Contact Integration & Native Protocol Links (Both Locales)
@@ -828,7 +711,7 @@ async function runBrowserVerification() {
 
     // 11a. Switch from /vi/ to /en/
     await page11.goto(`${baseUrl}/vi/`, { waitUntil: 'domcontentloaded' });
-    await page11.locator('header nav a[href*="/en/"]').click();
+    await page11.locator('header a:visible[href*="/en/"]').click();
     await page11.waitForURL('**/en/**');
     const savedAfterVi = await page11.evaluate(() => localStorage.getItem('dtm_locale'));
     if (savedAfterVi !== 'en') {
@@ -838,7 +721,7 @@ async function runBrowserVerification() {
 
     // 11b. Switch from /en/about/ to /vi/about/
     await page11.goto(`${baseUrl}/en/about/`, { waitUntil: 'domcontentloaded' });
-    await page11.locator('header nav a[href*="/vi/about/"]').click();
+    await page11.locator('header a:visible[href*="/vi/about/"]').click();
     await page11.waitForURL('**/vi/about/**');
     const savedAfterAbout = await page11.evaluate(() => localStorage.getItem('dtm_locale'));
     if (savedAfterAbout !== 'vi') {
@@ -852,6 +735,7 @@ async function runBrowserVerification() {
     const pageMobile11 = await contextMobile11.newPage();
     await pageMobile11.goto(`${baseUrl}/vi/about/`, { waitUntil: 'domcontentloaded' });
     const mobileDrawerTrigger = pageMobile11.locator('button[aria-controls="mobile-navigation"]');
+    await pageMobile11.locator('main').focus();
     await mobileDrawerTrigger.click();
     const mobileDrawer = pageMobile11.locator('#mobile-navigation');
     await mobileDrawer.waitFor({ state: 'visible' });
@@ -865,6 +749,7 @@ async function runBrowserVerification() {
       throw new Error(`Mobile drawer locale switch failed on About page: URL=${pageMobile11.url()}, stored=${mobileStoredEn}`);
     }
 
+    await pageMobile11.locator('main').focus();
     await mobileDrawerTrigger.click();
     await mobileDrawer.waitFor({ state: 'visible' });
     const mobileSwitcherVi = mobileDrawer.locator('a[href*="/vi/about/"]').first();
@@ -885,14 +770,26 @@ async function runBrowserVerification() {
     const context12 = await browser.newContext();
     const page12 = await context12.newPage();
     const externalRequests = [];
+    const requestEvidence = [];
+    const authorizedFontRequests = [];
     const failedResources = [];
     page12.on('response', (response) => {
       if (response.status() >= 400) failedResources.push({ url: response.url(), status: response.status() });
     });
     page12.on('request', (req) => {
       const url = req.url();
-      if (!url.startsWith('http://127.0.0.1')) {
-        externalRequests.push(url);
+      const destination = new URL(url);
+      if (destination.origin !== baseUrl) {
+        const detail = { url, method: req.method(), route: new URL(page12.url()).pathname, viewport: page12.viewportSize(), resourceType: req.resourceType() };
+        const approvedFont = req.method() === 'GET' && req.resourceType() === 'font' &&
+          destination.protocol === 'https:' && destination.host === 'fonts.gstatic.com' &&
+          /^\/s\/(?:bevietnampro|spacegrotesk|ibmplexmono)\/v\d+\/[^/]+\.woff2$/.test(destination.pathname) &&
+          !destination.search && !destination.hash && declaredFontUrls.has(url);
+        if (approvedFont) authorizedFontRequests.push(detail);
+        else {
+          externalRequests.push(url);
+          requestEvidence.push(detail);
+        }
       }
     });
 
@@ -900,8 +797,11 @@ async function runBrowserVerification() {
       await page12.goto(`${baseUrl}${p}`, { waitUntil: 'networkidle' });
     }
 
+    fs.writeFileSync(path.join(evidenceDir, 'network-report.json'), JSON.stringify({ unauthorizedExternalRequests: requestEvidence, authorizedFontRequests, failedResources }, null, 2));
     if (externalRequests.length > 0) {
-      throw new Error(`Unauthorized external/analytics requests detected: ${JSON.stringify(externalRequests)}`);
+      const failure = `Unauthorized external/analytics requests detected: ${JSON.stringify(externalRequests)}`;
+      deferredFailures.push(failure);
+      console.error(`  [FAIL] ${failure}`);
     }
 
     const analyticsGlobals = await page12.evaluate(() => {
@@ -916,7 +816,7 @@ async function runBrowserVerification() {
       throw new Error(`Tracking globals found in window: ${JSON.stringify(analyticsGlobals)}`);
     }
     if (failedResources.length) throw new Error(`Failed static/prefetch resources: ${JSON.stringify(failedResources)}`);
-    console.log('  [PASS] Zero external tracking requests made and zero tracking globals present in window.');
+    if (!externalRequests.length) console.log(`  [PASS] Zero unauthorized external requests and zero tracking globals; ${authorizedFontRequests.length} approved declared font requests recorded separately.`);
     await context12.close();
 
     // =========================================================================
@@ -1009,10 +909,11 @@ async function runBrowserVerification() {
               incomplete: results.incomplete.length,
               inapplicable: results.inapplicable.length,
             },
+            raw: results,
             violations: results.violations,
             incomplete: results.incomplete,
             inapplicable: results.inapplicable,
-            passesSummary: results.passes.map((p) => ({ id: p.id, description: p.description, nodesCount: p.nodes.length })),
+            passes: results.passes,
           });
         }
       }
@@ -1050,13 +951,51 @@ async function runBrowserVerification() {
         const contrastPage = await contrastContext.newPage();
         await contrastPage.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
         const measurement = await contrastPage.evaluate(() => {
-          const badges = document.querySelectorAll('.w-7.h-7.rounded-full, .w-6.h-6.rounded-full');
-          if (!badges.length) throw new Error('Numbered badges missing');
-          return Array.from(badges).map((badge) => {
+          const isAbout = location.pathname.includes('/about/');
+          const selector = isAbout ? '.w-7.h-7.rounded-full, .w-6.h-6.rounded-full' : 'main h1 span, main > section:first-child p, main > section:first-child a, #work h2, #work article h3, #work article p, #work article span, #work article a';
+          const elements = [...document.querySelectorAll(selector)].filter((element) => element.getClientRects().length && element.textContent.trim() && element.getAttribute('aria-hidden') !== 'true');
+          if (!elements.length) throw new Error(`Contrast targets missing: ${selector}`);
+          return elements.map((badge) => {
             function rgba(value) {
-              const values = value.match(/[\d.]+/g)?.map(Number);
-              if (!values || values.length < 3) throw new Error(`Unsupported computed color: ${value}`);
-              return [...values.slice(0, 3), values[3] ?? 1];
+              // Tailwind alpha utilities may compute to color(srgb ... / alpha),
+              // whose channels use 0..1 rather than rgb()'s 0..255 scale.
+              const srgb = value.match(/^color\(srgb\s+([\d.e+-]+)\s+([\d.e+-]+)\s+([\d.e+-]+)(?:\s*\/\s*([\d.e+-]+))?\)$/i);
+              if (srgb) return [...srgb.slice(1, 4).map((channel) => Number(channel) * 255), Number(srgb[4] ?? 1)];
+              const oklab = value.match(/^oklab\(([^)]+)\)$/i);
+              if (oklab) {
+                const values = oklab[1].split(/[\s/]+/).filter(Boolean);
+                if (values.length < 3 || values.length > 4) throw new Error(`Unsupported computed color: ${value}`);
+                const lab = values.slice(0, 3).map((channel, index) => parseFloat(channel) * (channel.endsWith('%') ? (index === 0 ? 0.01 : 0.004) : 1));
+                const multiply = (matrix, vector) => matrix.map((row) => row.reduce((sum, coefficient, index) => sum + coefficient * vector[index], 0));
+                // CSS Color 4 sample conversion: Oklab -> LMS -> XYZ D65 -> sRGB.
+                // https://www.w3.org/TR/css-color-4/#color-conversion-code
+                const lms = multiply([
+                  [1, 0.3963377773761749, 0.2158037573099136],
+                  [1, -0.1055613458156586, -0.0638541728258133],
+                  [1, -0.0894841775298119, -1.2914855480194092],
+                ], lab).map((channel) => channel ** 3);
+                const xyz = multiply([
+                  [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
+                  [-0.0405757452148008, 1.1122868032803170, -0.0717110580655164],
+                  [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816],
+                ], lms);
+                const linear = multiply([
+                  [12831 / 3959, -329 / 214, -1974 / 3959],
+                  [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+                  [705 / 12673, -2585 / 12673, 705 / 667],
+                ], xyz);
+                const channels = linear.map((channel) => {
+                  const encoded = Math.abs(channel) <= 0.0031308 ? 12.92 * channel : Math.sign(channel) * (1.055 * Math.abs(channel) ** (1 / 2.4) - 0.055);
+                  return Math.min(1, Math.max(0, encoded)) * 255;
+                });
+                return [...channels, values[3] ? parseFloat(values[3]) / (values[3].endsWith('%') ? 100 : 1) : 1];
+              }
+              const rgb = value.match(/^rgba?\(([^)]+)\)$/i);
+              if (!rgb) throw new Error(`Unsupported computed color: ${value}`);
+              const values = rgb[1].split(/[,\s/]+/).filter(Boolean);
+              if (values.length < 3 || values.length > 4) throw new Error(`Unsupported computed color: ${value}`);
+              return values.slice(0, 3).map((channel) => parseFloat(channel) * (channel.endsWith('%') ? 2.55 : 1))
+                .concat(values[3] ? parseFloat(values[3]) / (values[3].endsWith('%') ? 100 : 1) : 1);
             }
             function over(fg, bg) {
               return fg.slice(0, 3).map((channel, i) => channel * fg[3] + bg[i] * (1 - fg[3]));
@@ -1065,7 +1004,7 @@ async function runBrowserVerification() {
             for (let element = badge; element; element = element.parentElement) {
               const style = getComputedStyle(element);
               if (style.backgroundImage !== 'none' || Number(style.opacity) !== 1) {
-                throw new Error('Badge contrast requires manual image/opacity review');
+                throw new Error('Text contrast requires manual image/opacity review');
               }
               layers.push(style.backgroundColor);
             }
@@ -1081,22 +1020,30 @@ async function runBrowserVerification() {
               return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
             }
             const a = luminance(foreground), b = luminance(background);
-            return { color, layers, foreground, background, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
+            const computed = getComputedStyle(badge);
+            const large = parseFloat(computed.fontSize) >= 24 || (parseFloat(computed.fontSize) >= 18.666666666666668 && parseInt(computed.fontWeight, 10) >= 700);
+            return { threshold: large ? 3 : 4.5, text: badge.textContent.trim(), tag: badge.tagName, color, layers, foreground, background, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
           });
         });
-        contrastMeasurements.push({ theme, route, badges: measurement });
+        contrastMeasurements.push({ theme, route, textSurfaces: measurement });
+        fs.writeFileSync(path.join(evidenceDir, 'text-contrast.json'), JSON.stringify(contrastMeasurements, null, 2));
         await contrastContext.close();
         const minimum = Math.min(...measurement.map((badge) => badge.ratio));
-        if (minimum < 4.5) throw new Error(`Badge contrast below 4.5 (${theme}, ${route}): ${minimum}`);
-        console.log(`  [PASS] Rendered ${route} ${theme} badge minimum contrast ${minimum.toFixed(3)}:1`);
+        if (measurement.some((item) => item.ratio < item.threshold)) {
+          const failure = `Text contrast failed (${theme}, ${route}): ${JSON.stringify(measurement.filter((item) => item.ratio < item.threshold))}`;
+          deferredFailures.push(failure);
+          console.error(`  [FAIL] ${failure}`);
+        } else {
+          console.log(`  [PASS] Rendered ${route} ${theme} text minimum contrast ${minimum.toFixed(3)}:1`);
+        }
       }
     }
-    fs.writeFileSync(path.join(evidenceDir, 'badge-contrast.json'), JSON.stringify(contrastMeasurements, null, 2));
+    fs.writeFileSync(path.join(evidenceDir, 'text-contrast.json'), JSON.stringify(contrastMeasurements, null, 2));
 
     // Fail on every reported violation; incomplete checks remain separate evidence.
     const failingRuns = axeAuditRuns.filter((r) => r.counts.totalViolations > 0);
     if (failingRuns.length > 0) {
-      throw new Error(
+      deferredFailures.push(
         `Axe accessibility violation: ${failingRuns.length} run(s) had violations. Evidence saved to ${axeReportPath}. First failure: ${JSON.stringify(failingRuns[0].violations, null, 2)}`
       );
     }
@@ -1113,16 +1060,16 @@ async function runBrowserVerification() {
         path: '/vi/',
         name: 'home-vi',
         expectedIdentity: 'Đàm Thiên Minh',
-        expectedServices: 'Website cho doanh nghiệp và dịch vụ',
-        expectedProcess: 'Các bước làm việc',
-        expectedCta: 'Liên hệ với tôi',
+        expectedServices: 'MCP Project Assistant',
+        expectedProcess: 'Portfolio cá nhân',
+        expectedCta: 'Trao đổi với mình',
       },
       {
         path: '/en/',
         name: 'home-en',
         expectedIdentity: 'Thien Minh Dam',
-        expectedServices: 'Websites for businesses and service providers',
-        expectedProcess: 'How we work together',
+        expectedServices: 'MCP Project Assistant',
+        expectedProcess: 'Personal portfolio',
         expectedCta: 'Get in touch',
       },
       {
@@ -1186,6 +1133,17 @@ async function runBrowserVerification() {
         }
       }
 
+      if (!item.path.includes('/about/')) {
+        const expectedH1 = item.path.startsWith('/vi/') ? 'Mình làm web. Đây là những gì mình đang xây.' : "I build for the web. Here's what I'm working on.";
+        if (await page14.locator('h1').count() !== 1 || (await page14.locator('h1').textContent()).replace(/\s+/g, ' ').trim() !== expectedH1) {
+          throw new Error(`Rendered V2 H1 mismatch on ${item.path}`);
+        }
+        for (const repository of ['mcp-project-assistant', 'minh-portforlio']) {
+          const source = page14.locator(`#work article a[href="https://github.com/thminh176/${repository}"]`);
+          if (await source.count() !== 1 || !await source.isVisible()) throw new Error(`Verified source missing on ${item.path}: ${repository}`);
+        }
+      }
+
       if (item.path.includes('/about/')) {
         const requiredAboutTerms = item.path.startsWith('/vi/')
           ? ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Codex', 'Antigravity', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']
@@ -1221,7 +1179,27 @@ async function runBrowserVerification() {
 
     await context14.close();
 
+    if (deferredFailures.length) {
+      fs.writeFileSync(path.join(evidenceDir, 'verification-failures.json'), JSON.stringify(deferredFailures, null, 2));
+      throw new Error(`Browser verification failed (${deferredFailures.length} findings); complete evidence saved in ${evidenceDir}:\n${deferredFailures.join('\n')}`);
+    }
+
     console.log('\n[verify-browser] ALL BROWSER VERIFICATION PHASES (1 THROUGH 14) PASSED SUCCESSFULLY.\n');
+  } catch (error) {
+    const pages = browser?.contexts().flatMap((current) => current.pages()) || [];
+    const failure = { message: error.message, stack: error.stack, pages: [] };
+    for (const [index, current] of pages.entries()) {
+      const screenshot = `failure-${index}.png`;
+      const detail = { url: current.url(), viewport: current.viewportSize(), screenshot };
+      try {
+        await current.screenshot({ path: path.join(evidenceDir, screenshot), fullPage: true, timeout: 5000 });
+      } catch (captureError) {
+        detail.captureError = captureError.message;
+      }
+      failure.pages.push(detail);
+    }
+    fs.writeFileSync(path.join(evidenceDir, 'failure.json'), JSON.stringify(failure, null, 2));
+    throw error;
   } finally {
     // Bounded cleanup for both browser and static server
     console.log('[verify-browser] Cleaning up browser and static server resources...');
