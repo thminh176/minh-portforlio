@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import FeaturedMcpProject from '@/components/FeaturedMcpProject';
+import FeaturedPortfolioProject from '@/components/FeaturedPortfolioProject';
 import Footer from '@/components/Footer';
 import ContactForm from '@/components/ContactForm';
 import DirectContact from '@/components/DirectContact';
@@ -44,6 +45,7 @@ export default async function HomePage({
 
           <div className="space-y-12 sm:space-y-16">
             <FeaturedMcpProject locale={locale} />
+            <FeaturedPortfolioProject locale={locale} />
           </div>
         </section>
 
