@@ -1,5 +1,6 @@
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
+import FeaturedMcpProject from '@/components/FeaturedMcpProject';
 import Footer from '@/components/Footer';
 import ContactForm from '@/components/ContactForm';
 import DirectContact from '@/components/DirectContact';
@@ -30,7 +31,23 @@ export default async function HomePage({
         {/* 1. Hero Section */}
         <Hero locale={locale} />
 
-        {/* 2. Contact Section */}
+        {/* 2. Work Section */}
+        <section id="work" className="space-y-8 sm:space-y-12 scroll-mt-24">
+          <div className="space-y-3">
+            <div className="text-xs font-mono uppercase tracking-wider text-[var(--color-brick-deep)] font-semibold">
+              {isVi ? 'CHỌN DỰ ÁN' : 'SELECTED WORK'}
+            </div>
+            <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--color-ink)]">
+              {isVi ? 'Code, giao diện và quyết định kỹ thuật.' : 'Code, interfaces, and technical decisions.'}
+            </h2>
+          </div>
+
+          <div className="space-y-12 sm:space-y-16">
+            <FeaturedMcpProject locale={locale} />
+          </div>
+        </section>
+
+        {/* 3. Contact Section */}
         <section id="contact" className="space-y-8 scroll-mt-24">
           <div className="text-center space-y-3 max-w-xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[var(--bg-surface)] text-[var(--accent-primary)] border border-[var(--border-strong)]">
