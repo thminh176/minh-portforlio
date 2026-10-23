@@ -66,7 +66,7 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
         {/* Mobile Logotype / Authentic Identity */}
         <Link
           href={`/${locale}/`}
-          className="flex items-center gap-2 group rounded-md p-1 -m-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+          className="min-h-[44px] flex items-center gap-2 group rounded-md p-1 -m-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           aria-label={`${name} — ${dict.common.home}`}
         >
           <span className="font-display font-bold text-2xl tracking-tight text-[var(--color-ink)] group-hover:text-[var(--color-brick-deep)] transition-colors">
@@ -109,7 +109,7 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
       {mobileMenuOpen && (
         <div
           id="mobile-navigation"
-          className="lg:hidden border-t border-[var(--color-border)] bg-[var(--color-paper)] px-4 sm:px-6 py-5 space-y-4 shadow-lg transition-all"
+          className="lg:hidden max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-[var(--color-border)] bg-[var(--color-paper)] px-4 sm:px-6 py-5 space-y-4 shadow-lg transition-all"
         >
           <nav className="flex flex-col space-y-1.5 text-base font-medium" aria-label={dict.common.mobileMenu}>
             <Link
@@ -191,7 +191,7 @@ export default function Header({ locale, activeRoute = 'home' }: HeaderProps) {
             aria-label={`${name} — ${dict.common.home}`}
           >
             {/* Monogram Box */}
-            <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/15 flex items-center justify-center font-mono font-bold text-sm text-[var(--color-brick)] group-hover:border-[var(--color-brick)] transition-colors shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/15 flex items-center justify-center font-mono font-bold text-sm text-[var(--color-dark-copy)] group-hover:border-[var(--color-brick)] transition-colors shadow-sm">
               DTM
             </div>
 
