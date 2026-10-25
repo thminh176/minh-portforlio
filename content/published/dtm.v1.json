@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "siteId": "dtm",
+  "revision": "dtm-initial-20261026",
+  "exportedAt": "2026-10-25T18:25:04Z",
+  "locales": [
+    "vi",
+    "en"
+  ],
+  "profiles": [
+    {
+      "id": "profile-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "name": "Đàm Thiên Minh",
+      "role": "Web Developer",
+      "tagline": "Mình làm web và chia sẻ các dự án cá nhân cùng ghi chép học tập.",
+      "bioSummary": "Mình làm các dự án web, có kinh nghiệm triển khai hạ tầng và đang học thêm về backend, DevOps.",
+      "aboutStory": [
+        "Mình là Minh. Mình làm các dự án web và chia sẻ ghi chép về quá trình học, xây dựng chúng tại đây.",
+        "Mình đã làm việc với ứng dụng Next.js và triển khai trên Ubuntu Server, sử dụng Docker, PostgreSQL và Cloudflare."
+      ],
+      "hero": {
+        "kicker": "Đàm Thiên Minh / Web Developer",
+        "headlineLines": [
+          "Mình làm web.",
+          "Đây là những gì",
+          "mình đang xây."
+        ],
+        "supporting": "Mình chia sẻ các dự án cá nhân và ghi chép về quá trình học, làm web ở đây."
+      }
+    },
+    {
+      "id": "profile-en",
+      "locale": "en",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "name": "Thien Minh Dam",
+      "role": "Web Developer",
+      "tagline": "I build for the web and share personal projects and learning notes.",
+      "bioSummary": "I work on web projects, have deployment experience and am learning more about backend engineering and DevOps.",
+      "aboutStory": [
+        "I'm Minh. I work on web projects and share notes here about learning and building them.",
+        "I have worked with Next.js applications and deployments on Ubuntu Server, using Docker, PostgreSQL and Cloudflare."
+      ],
+      "hero": {
+        "kicker": "Thien Minh Dam / Web Developer",
+        "headlineLines": [
+          "I build for the web.",
+          "Here's what I'm",
+          "working on."
+        ],
+        "supporting": "A place for my personal projects and notes on learning and building for the web."
+      }
+    }
+  ],
+  "settings": [
+    {
+      "id": "settings-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "siteTitle": "Đàm Thiên Minh",
+      "siteDescription": "Portfolio của Đàm Thiên Minh: phát triển ứng dụng web, triển khai và vận hành hạ tầng; hướng học tiếp là backend và DevOps.",
+      "journalTitle": "Ghi chép về việc học và làm web",
+      "journalEmptyText": "Mình chưa đăng bài nào. Khi có ghi chép đủ rõ, mình sẽ chia sẻ ở đây.",
+      "featuredProjectIds": [
+        "project-mcp-vi",
+        "project-portfolio-vi"
+      ],
+      "recentPostLimit": 3
+    },
+    {
+      "id": "settings-en",
+      "locale": "en",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "siteTitle": "Thien Minh Dam",
+      "siteDescription": "Thien Minh Dam: Web Developer with hands-on application deployment and infrastructure experience, working toward backend engineering and DevOps.",
+      "journalTitle": "Notes on learning and building for the web",
+      "journalEmptyText": "No posts yet. I'll share notes here when they're ready.",
+      "featuredProjectIds": [
+        "project-mcp-en",
+        "project-portfolio-en"
+      ],
+      "recentPostLimit": 3
+    }
+  ],
+  "posts": [],
+  "projects": [
+    {
+      "id": "project-mcp-en",
+      "locale": "en",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "translationGroup": "mcp-project-assistant",
+      "translations": [
+        {
+          "locale": "vi",
+          "recordId": "project-mcp-vi"
+        }
+      ],
+      "slug": "mcp-project-assistant",
+      "title": "MCP Project Assistant",
+      "metadata": {
+        "title": "MCP Project Assistant",
+        "description": "A local MCP server for reading code, searching and reviewing Git diffs in a selected workspace, with previews before edits are applied."
+      },
+      "body": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "A local MCP server for reading code, searching and reviewing Git diffs in a selected workspace, with previews before edits are applied."
+            }
+          ]
+        }
+      ],
+      "related": [],
+      "summary": "A local MCP server for reading code, searching and reviewing Git diffs in a selected workspace, with previews before edits are applied.",
+      "order": 0,
+      "technologies": [
+        "TypeScript",
+        "MCP SDK",
+        "Windows / WSL"
+      ],
+      "sourceUrl": "https://github.com/thminh176/mcp-project-assistant"
+    },
+    {
+      "id": "project-mcp-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "translationGroup": "mcp-project-assistant",
+      "translations": [
+        {
+          "locale": "en",
+          "recordId": "project-mcp-en"
+        }
+      ],
+      "slug": "mcp-project-assistant",
+      "title": "MCP Project Assistant",
+      "metadata": {
+        "title": "MCP Project Assistant",
+        "description": "MCP server chạy local giúp AI đọc mã, tìm kiếm và xem Git diff trong workspace đã chọn. Thay đổi được xem trước trước khi áp dụng."
+      },
+      "body": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "MCP server chạy local giúp AI đọc mã, tìm kiếm và xem Git diff trong workspace đã chọn. Thay đổi được xem trước trước khi áp dụng."
+            }
+          ]
+        }
+      ],
+      "related": [],
+      "summary": "MCP server chạy local giúp AI đọc mã, tìm kiếm và xem Git diff trong workspace đã chọn. Thay đổi được xem trước trước khi áp dụng.",
+      "order": 0,
+      "technologies": [
+        "TypeScript",
+        "MCP SDK",
+        "Windows / WSL"
+      ],
+      "sourceUrl": "https://github.com/thminh176/mcp-project-assistant"
+    },
+    {
+      "id": "project-portfolio-en",
+      "locale": "en",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "translationGroup": "personal-portfolio",
+      "translations": [
+        {
+          "locale": "vi",
+          "recordId": "project-portfolio-vi"
+        }
+      ],
+      "slug": "personal-portfolio",
+      "title": "Personal portfolio",
+      "metadata": {
+        "title": "Personal portfolio",
+        "description": "A Vietnamese–English portfolio built with Next.js, TypeScript and Tailwind CSS, exported as static pages for Cloudflare Pages."
+      },
+      "body": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "A Vietnamese–English portfolio built with Next.js, TypeScript and Tailwind CSS, exported as static pages for Cloudflare Pages."
+            }
+          ]
+        }
+      ],
+      "related": [],
+      "summary": "A Vietnamese–English portfolio built with Next.js, TypeScript and Tailwind CSS, exported as static pages for Cloudflare Pages.",
+      "order": 1,
+      "technologies": [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "static export"
+      ],
+      "sourceUrl": "https://github.com/thminh176/minh-portforlio"
+    },
+    {
+      "id": "project-portfolio-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T18:25:04Z",
+      "updatedAt": "2026-10-25T18:25:04Z",
+      "translationGroup": "personal-portfolio",
+      "translations": [
+        {
+          "locale": "en",
+          "recordId": "project-portfolio-en"
+        }
+      ],
+      "slug": "portfolio-ca-nhan",
+      "title": "Portfolio cá nhân",
+      "metadata": {
+        "title": "Portfolio cá nhân",
+        "description": "Website cá nhân song ngữ Việt–Anh, xây bằng Next.js, TypeScript và Tailwind CSS, xuất trang tĩnh cho Cloudflare Pages."
+      },
+      "body": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "Website cá nhân song ngữ Việt–Anh, xây bằng Next.js, TypeScript và Tailwind CSS, xuất trang tĩnh cho Cloudflare Pages."
+            }
+          ]
+        }
+      ],
+      "related": [],
+      "summary": "Website cá nhân song ngữ Việt–Anh, xây bằng Next.js, TypeScript và Tailwind CSS, xuất trang tĩnh cho Cloudflare Pages.",
+      "order": 1,
+      "technologies": [
+        "Next.js",
+        "TypeScript",
+        "Tailwind CSS",
+        "static export"
+      ],
+      "sourceUrl": "https://github.com/thminh176/minh-portforlio"
+    }
+  ],
+  "media": []
+}

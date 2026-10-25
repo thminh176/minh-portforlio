@@ -5,7 +5,7 @@
   "packageManager": "pnpm@12.11.2",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/normalize-static-export.mjs",
+    "build": "node --experimental-strip-types scripts/validate-content.mjs && next build && node scripts/normalize-static-export.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "check:secrets": "node scripts/check-secrets.mjs",
@@ -20,7 +20,9 @@
     "test:browser": "node scripts/verify-browser.mjs",
     "ci": "pnpm check && pnpm build && pnpm smoke:export",
     "test:lighthouse": "node scripts/verify-lighthouse.mjs",
-    "test:content": "node --experimental-strip-types scripts/test-content-snapshot.mjs"
+    "test:content": "node --experimental-strip-types scripts/test-content-snapshot.mjs",
+    "validate:content": "node --experimental-strip-types scripts/validate-content.mjs",
+    "test:content:loader": "node --experimental-strip-types scripts/test-content-loader.mjs"
   },
   "dependencies": {
     "next": "^16.4.1",
