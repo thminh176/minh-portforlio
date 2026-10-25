@@ -1,0 +1,907 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:dtm:published-snapshot:1",
+  "title": "DTM profile of shared published snapshot v1",
+  "description": "Normative sharedEnvelope accepts dtm/dvt; root specializes site identity to dtm. Site route inventory/mapping is a business invariant.",
+  "allOf": [
+    {
+      "$ref": "#/definitions/sharedEnvelope"
+    },
+    {
+      "properties": {
+        "siteId": {
+          "const": "dtm"
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "locale": {
+      "enum": [
+        "vi",
+        "en"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 100
+    },
+    "httpsUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 2048,
+      "pattern": "^https://[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::443)?(?:/[A-Za-z0-9._~!$&\\x27()*+,;=:@%/?#-]*)?$"
+    },
+    "siteId": {
+      "enum": [
+        "dtm",
+        "dvt"
+      ]
+    },
+    "internalPath": {
+      "type": "string",
+      "maxLength": 240,
+      "pattern": "^/(?:[a-z0-9]+(?:-[a-z0-9]+)*/)*$"
+    },
+    "link": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "external"
+            },
+            "url": {
+              "$ref": "#/definitions/httpsUrl"
+            }
+          },
+          "required": [
+            "kind",
+            "url"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "record"
+            },
+            "collection": {
+              "enum": [
+                "posts",
+                "projects"
+              ]
+            },
+            "recordId": {
+              "$ref": "#/definitions/id"
+            }
+          },
+          "required": [
+            "kind",
+            "collection",
+            "recordId"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "internal"
+            },
+            "path": {
+              "$ref": "#/definitions/internalPath"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ]
+        }
+      ]
+    },
+    "inline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 10000
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "link"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "target": {
+              "$ref": "#/definitions/link"
+            }
+          },
+          "required": [
+            "type",
+            "label",
+            "target"
+          ]
+        }
+      ]
+    },
+    "inlines": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/inline"
+      },
+      "minItems": 1,
+      "maxItems": 200
+    },
+    "meaningfulImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mediaId": {
+          "$ref": "#/definitions/id"
+        },
+        "decorative": {
+          "const": false
+        },
+        "alt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "caption": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "mediaId",
+        "decorative",
+        "alt"
+      ]
+    },
+    "decorativeImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mediaId": {
+          "$ref": "#/definitions/id"
+        },
+        "decorative": {
+          "const": true
+        },
+        "alt": {
+          "const": ""
+        }
+      },
+      "required": [
+        "mediaId",
+        "decorative",
+        "alt"
+      ]
+    },
+    "image": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/meaningfulImage"
+        },
+        {
+          "$ref": "#/definitions/decorativeImage"
+        }
+      ]
+    },
+    "block": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "paragraph"
+            },
+            "children": {
+              "$ref": "#/definitions/inlines"
+            }
+          },
+          "required": [
+            "type",
+            "children"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "heading"
+            },
+            "level": {
+              "enum": [
+                2,
+                3,
+                4
+              ]
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": [
+            "type",
+            "level",
+            "text"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "list"
+            },
+            "ordered": {
+              "type": "boolean"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/inlines"
+              },
+              "minItems": 1,
+              "maxItems": 100
+            }
+          },
+          "required": [
+            "type",
+            "ordered",
+            "items"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "quote"
+            },
+            "children": {
+              "$ref": "#/definitions/inlines"
+            },
+            "attribution": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            }
+          },
+          "required": [
+            "type",
+            "children"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "code"
+            },
+            "language": {
+              "enum": [
+                "text",
+                "javascript",
+                "typescript",
+                "json",
+                "html",
+                "css",
+                "bash",
+                "powershell",
+                "python",
+                "sql",
+                "yaml"
+              ]
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50000
+            }
+          },
+          "required": [
+            "type",
+            "language",
+            "code"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "image"
+            },
+            "image": {
+              "$ref": "#/definitions/image"
+            }
+          },
+          "required": [
+            "type",
+            "image"
+          ]
+        }
+      ]
+    },
+    "body": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/block"
+      },
+      "minItems": 1,
+      "maxItems": 500
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 320
+        },
+        "image": {
+          "$ref": "#/definitions/meaningfulImage"
+        }
+      },
+      "required": [
+        "title",
+        "description"
+      ]
+    },
+    "translation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "locale": {
+          "$ref": "#/definitions/locale"
+        },
+        "recordId": {
+          "$ref": "#/definitions/id"
+        }
+      },
+      "required": [
+        "locale",
+        "recordId"
+      ]
+    },
+    "post": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "locale": {
+          "$ref": "#/definitions/locale"
+        },
+        "status": {
+          "const": "published"
+        },
+        "publishedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "translationGroup": {
+          "$ref": "#/definitions/id"
+        },
+        "translations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/translation"
+          },
+          "maxItems": 1
+        },
+        "slug": {
+          "$ref": "#/definitions/slug"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "metadata": {
+          "$ref": "#/definitions/metadata"
+        },
+        "body": {
+          "$ref": "#/definitions/body"
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "collection": {
+                "enum": [
+                  "posts",
+                  "projects"
+                ]
+              },
+              "recordId": {
+                "$ref": "#/definitions/id"
+              }
+            },
+            "required": [
+              "collection",
+              "recordId"
+            ]
+          },
+          "maxItems": 20
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "uniqueItems": true,
+          "maxItems": 12
+        },
+        "cover": {
+          "$ref": "#/definitions/meaningfulImage"
+        }
+      },
+      "required": [
+        "id",
+        "locale",
+        "status",
+        "publishedAt",
+        "updatedAt",
+        "translationGroup",
+        "translations",
+        "slug",
+        "title",
+        "metadata",
+        "body",
+        "related",
+        "excerpt",
+        "tags"
+      ]
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "locale": {
+          "$ref": "#/definitions/locale"
+        },
+        "status": {
+          "const": "published"
+        },
+        "publishedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "translationGroup": {
+          "$ref": "#/definitions/id"
+        },
+        "translations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/translation"
+          },
+          "maxItems": 1
+        },
+        "slug": {
+          "$ref": "#/definitions/slug"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "metadata": {
+          "$ref": "#/definitions/metadata"
+        },
+        "body": {
+          "$ref": "#/definitions/body"
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "collection": {
+                "enum": [
+                  "posts",
+                  "projects"
+                ]
+              },
+              "recordId": {
+                "$ref": "#/definitions/id"
+              }
+            },
+            "required": [
+              "collection",
+              "recordId"
+            ]
+          },
+          "maxItems": 20
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "technologies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "minItems": 1,
+          "maxItems": 30,
+          "uniqueItems": true
+        },
+        "sourceUrl": {
+          "$ref": "#/definitions/httpsUrl"
+        },
+        "liveUrl": {
+          "$ref": "#/definitions/httpsUrl"
+        },
+        "cover": {
+          "$ref": "#/definitions/meaningfulImage"
+        }
+      },
+      "required": [
+        "id",
+        "locale",
+        "status",
+        "publishedAt",
+        "updatedAt",
+        "translationGroup",
+        "translations",
+        "slug",
+        "title",
+        "metadata",
+        "body",
+        "related",
+        "summary",
+        "order",
+        "technologies",
+        "sourceUrl"
+      ]
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "locale": {
+          "$ref": "#/definitions/locale"
+        },
+        "status": {
+          "const": "published"
+        },
+        "publishedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "tagline": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "bioSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "aboutStory": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 3000
+          },
+          "minItems": 1,
+          "maxItems": 30
+        },
+        "hero": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kicker": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "headlineLines": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "minItems": 1,
+              "maxItems": 5
+            },
+            "supporting": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            }
+          },
+          "required": [
+            "kicker",
+            "headlineLines",
+            "supporting"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "locale",
+        "status",
+        "publishedAt",
+        "updatedAt",
+        "name",
+        "role",
+        "tagline",
+        "bioSummary",
+        "aboutStory",
+        "hero"
+      ]
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "locale": {
+          "$ref": "#/definitions/locale"
+        },
+        "status": {
+          "const": "published"
+        },
+        "publishedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updatedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "siteTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "siteDescription": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 320
+        },
+        "journalTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "journalEmptyText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "featuredProjectIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          },
+          "maxItems": 10,
+          "uniqueItems": true
+        },
+        "recentPostLimit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        }
+      },
+      "required": [
+        "id",
+        "locale",
+        "status",
+        "publishedAt",
+        "updatedAt",
+        "siteTitle",
+        "siteDescription",
+        "journalTitle",
+        "journalEmptyText",
+        "featuredProjectIds",
+        "recentPostLimit"
+      ]
+    },
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/id"
+        },
+        "path": {
+          "type": "string",
+          "maxLength": 240,
+          "pattern": "^/media/content/(?:[a-z0-9]+(?:-[a-z0-9]+)*/)*[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:avif|webp|png|jpg|jpeg)$"
+        },
+        "mimeType": {
+          "enum": [
+            "image/avif",
+            "image/webp",
+            "image/png",
+            "image/jpeg"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16384
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "mimeType",
+        "width",
+        "height"
+      ]
+    },
+    "sharedEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "siteId": {
+          "$ref": "#/definitions/siteId"
+        },
+        "revision": {
+          "$ref": "#/definitions/id"
+        },
+        "exportedAt": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "locales": {
+          "const": [
+            "vi",
+            "en"
+          ]
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/profile"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "settings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/settings"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "posts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/post"
+          },
+          "maxItems": 10000
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/project"
+          },
+          "maxItems": 10000
+        },
+        "media": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/media"
+          },
+          "maxItems": 20000
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "siteId",
+        "revision",
+        "exportedAt",
+        "locales",
+        "profiles",
+        "settings",
+        "posts",
+        "projects",
+        "media"
+      ]
+    }
+  }
+}
