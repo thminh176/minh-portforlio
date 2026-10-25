@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ProjectDetail from '@/components/projects/ProjectDetail';
+import ProjectListing from '@/components/projects/ProjectListing';
 import { getProjects, loadSnapshot } from '@/lib/content';
-import type { Block, ImageUse, Inline, LinkTarget, Locale, Project, SiteSettings, Snapshot } from '@/lib/content/types';
+import type { Locale, Project, SiteSettings, Snapshot } from '@/lib/content/types';
 import { siteConfig } from '@/config/site';
 
 // Optional catch-all exports the real listings even when no published project exists.
@@ -56,72 +56,19 @@ export async function generateMetadata({ params }: { params: RouteParams }): Pro
   };
 }
 
-function href(target: LinkTarget, snapshot: Snapshot): string | null {
-  if (target.kind === 'external') return target.url;
-  if (target.kind === 'internal') return target.path;
-  const record = snapshot[target.collection].find(item => item.id === target.recordId);
-  return record ? `/${record.locale}/${target.collection === 'posts' ? 'blog' : 'projects'}/${record.slug}/` : null;
-}
-function inlines(items: readonly Inline[], snapshot: Snapshot) {
-  return items.map((item, i) => {
-    if (item.type === 'text') return <span key={i}>{item.text}</span>;
-    const target = href(item.target, snapshot);
-    return target ? <a key={i} href={target} rel={item.target.kind === 'external' ? 'noopener noreferrer' : undefined}>{item.label}</a> : <span key={i}>{item.label}</span>;
-  });
-}
-function image(use: ImageUse, snapshot: Snapshot) {
-  const media = snapshot.media.find(asset => asset.id === use.mediaId);
-  if (!media) notFound(); // Validator has already required every referenced asset.
-  return <figure><Image src={media.path} alt={use.alt} width={media.width} height={media.height} />{'caption' in use && use.caption ? <figcaption>{use.caption}</figcaption> : null}</figure>;
-}
-function bodyBlock(block: Block, snapshot: Snapshot) {
-  switch (block.type) {
-    case 'paragraph': return <p>{inlines(block.children, snapshot)}</p>;
-    case 'heading':
-      if (block.level === 2) return <h2>{block.text}</h2>;
-      if (block.level === 3) return <h3>{block.text}</h3>;
-      return <h4>{block.text}</h4>;
-    case 'list': {
-      const items = block.items.map((item, i) => <li key={i}>{inlines(item, snapshot)}</li>);
-      return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>;
-    }
-    case 'quote': return <blockquote>{inlines(block.children, snapshot)}{block.attribution ? <cite>{block.attribution}</cite> : null}</blockquote>;
-    case 'code': return <pre><code>{block.code}</code></pre>;
-    case 'image': return image(block.image, snapshot);
-  }
-}
-
 function indexTitle(locale: Locale) { return locale === 'vi' ? 'Dự án' : 'Projects'; }
 
-// Semantic wiring only; project listing/detail design and rich presentation follow in M05b.
 export default async function ProjectPage({ params }: { params: RouteParams }) {
-  const { locale, project, projects, snapshot } = await route(params);
+  const { locale, project, projects, settings, snapshot } = await route(params);
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col justify-between">
       <Header locale={locale} />
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-12 space-y-8 focus:outline-none">
-        {project ? <>
-          <Link href={`/${locale}/projects/`}>{indexTitle(locale)}</Link>
-          <article data-published-project>
-            <h1 className="font-display text-3xl sm:text-5xl">{project.title}</h1>
-            <p>{project.summary}</p>
-            <ul>{project.technologies.map(technology => <li key={technology}>{technology}</li>)}</ul>
-            <a href={project.sourceUrl} rel="noopener noreferrer">{locale === 'vi' ? 'Mã nguồn' : 'Source repository'}</a>
-            {project.liveUrl ? <a href={project.liveUrl} rel="noopener noreferrer">{locale === 'vi' ? 'Xem website' : 'Visit website'}</a> : null}
-            {project.cover ? image(project.cover, snapshot) : null}
-            <div className="space-y-6">{project.body.map((block, i) => <div key={i}>{bodyBlock(block, snapshot)}</div>)}</div>
-          </article>
-        </> : <>
-          <h1 className="font-display text-3xl sm:text-5xl">{indexTitle(locale)}</h1>
-          {projects.length === 0 ? <p data-project-empty>{locale === 'vi' ? 'Chưa có dự án được công bố.' : 'No published projects yet.'}</p> : (
-            <ul className="space-y-8" data-project-list>
-              {projects.map(record => <li key={record.id}>
-                <h2 className="font-display text-2xl"><Link href={`/${locale}/projects/${record.slug}/`}>{record.title}</Link></h2>
-                <p>{record.summary}</p>
-              </li>)}
-            </ul>
-          )}
-        </>}
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-10 sm:py-16 focus:outline-none">
+        {project ? (
+          <ProjectDetail locale={locale} project={project} snapshot={snapshot} />
+        ) : (
+          <ProjectListing locale={locale} projects={projects} settings={settings} />
+        )}
       </main>
       <Footer locale={locale} />
     </div>
