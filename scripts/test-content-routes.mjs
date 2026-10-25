@@ -82,7 +82,8 @@ async function build(label, snapshot, expectedExit = 0, expectedRule) {
     const files = await inventory(path.join(stage, 'out'));
     evidence.exports[label] = files;
     const actual = files.filter(file => /^(vi|en)\/blog\/.*index\.html$/.test(file));
-    const posts = Buffer.isBuffer(snapshot) ? JSON.parse(snapshot).posts : snapshot.posts;
+    const data = Buffer.isBuffer(snapshot) ? JSON.parse(snapshot) : snapshot;
+    const posts = data.posts;
     const expected = ['vi/blog/index.html', 'en/blog/index.html', ...posts.map(post => `${post.locale}/blog/${post.slug}/index.html`)].sort();
     assert.deepEqual(actual, expected, 'only listings and real published single-slug articles export');
     assert.ok(!files.some(file => file.startsWith('vn/')));
@@ -96,11 +97,60 @@ async function build(label, snapshot, expectedExit = 0, expectedRule) {
       if (!localPosts.length) assert.ok(html.includes(escape(settings.journalEmptyText)));
       for (const post of localPosts) assert.ok(html.includes(`href="/${locale}/blog/${post.slug}/"`));
     }
-    console.log(`ROUTE_EXPORT ${JSON.stringify({ label, blogHtml: actual })}`);
+    const projectHtml = files.filter(file => /^(vi|en)\/projects\/.*\.html$/.test(file));
+    assert.deepEqual(projectHtml, ['vi/projects/index.html', 'en/projects/index.html', ...data.projects.map(record => `${record.locale}/projects/${record.slug}/index.html`)].sort(), 'only genuine project indexes and published single-slug details export');
+    for (const locale of ['vi', 'en']) {
+      const html = await readFile(path.join(stage, 'out', locale, 'projects', 'index.html'), 'utf8');
+      const projects = data.projects.filter(record => record.locale === locale);
+      assert.ok(html.includes(locale === 'vi' ? 'Dự án' : 'Projects'));
+      assert.equal(html.includes('data-project-empty'), projects.length === 0);
+      assert.equal(html.includes('data-project-list'), projects.length > 0);
+      if (!projects.length) assert.ok(html.includes(locale === 'vi' ? 'Chưa có dự án được công bố.' : 'No published projects yet.'));
+      for (const record of projects) {
+        assert.ok(html.includes(`href="/${locale}/projects/${record.slug}/"`));
+        assert.ok(html.includes(escape(record.title)));
+      }
+    }
+    for (const record of data.projects) {
+      const html = await readFile(path.join(stage, 'out', record.locale, 'projects', record.slug, 'index.html'), 'utf8');
+      assert.ok(html.includes('<article data-published-project'));
+      for (const text of [record.title, record.summary, ...record.technologies, ...record.body.flatMap(blockText)]) assert.ok(html.includes(escape(text)), `${label}: project text ${record.id}`);
+      assert.ok(html.includes(`href="${record.sourceUrl}" rel="noopener noreferrer"`));
+      assert.ok(html.includes(`href="/${record.locale}/projects/"`));
+      assert.ok(html.includes(`<html lang="${record.locale}"`));
+      assert.ok(html.includes(`<title>${escape(record.metadata.title)}</title>`));
+      assert.ok(html.includes(`name="description" content="${escape(record.metadata.description)}"`));
+      assert.ok(html.includes(`rel="canonical" href="https://damthienminh.id.vn/${record.locale}/projects/${record.slug}/"`));
+      assert.ok(html.includes('content="noindex, nofollow"') || process.env.NEXT_PUBLIC_SITE_ENV === 'production');
+      const alternates = [...html.matchAll(/<link rel="alternate" hrefLang="([^"]+)" href="([^"]+)"/g)].map(match => [match[1], match[2]]);
+      const expectedAlternates = [record, ...record.translations.map(ref => data.projects.find(item => item.id === ref.recordId))].map(item => [item.locale, `https://damthienminh.id.vn/${item.locale}/projects/${item.slug}/`]);
+      assert.deepEqual(alternates.sort(), expectedAlternates.sort(), 'only actual project translations, including differing slugs');
+      assert.ok(!html.includes('<time'), 'snapshot migration timestamps are not project launch dates');
+      assert.ok(!html.includes('<script>routeFixtureMustStayInert()'));
+    }
+    // Check links in every real exported page, including repaired blog-to-project references.
+    for (const file of files.filter(file => file.endsWith('.html'))) {
+      const html = await readFile(path.join(stage, 'out', file), 'utf8');
+      for (const match of html.matchAll(/href="(\/(?:vi|en)\/(?:blog|projects)\/[^"#?]*)"/g)) {
+        assert.ok(files.includes(match[1].slice(1) + 'index.html'), `${label}: stale content href ${match[1]} in ${file}`);
+      }
+    }
+    console.log(`ROUTE_EXPORT ${JSON.stringify({ label, blogHtml: actual, projectHtml })}`);
   }
 }
 function escape(text) {
   return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#x27;');
+}
+function blockText(block) {
+  const inlineText = items => items.map(item => item.type === 'text' ? item.text : item.label);
+  switch (block.type) {
+    case 'paragraph': return inlineText(block.children);
+    case 'heading': return [block.text];
+    case 'list': return block.items.flatMap(inlineText);
+    case 'quote': return [...inlineText(block.children), ...(block.attribution ? [block.attribution] : [])];
+    case 'code': return [block.code];
+    case 'image': return block.image.caption ? [block.image.caption] : [];
+  }
 }
 function post(id, locale, slug, group) {
   return {
@@ -135,6 +185,16 @@ try {
   vi.translations = [{ locale: 'en', recordId: en.id }];
   en.translations = [{ locale: 'vi', recordId: vi.id }];
   candidate.posts = [en, vi, only]; // Same publication time, ASCII ID order.
+  const mcp = candidate.projects.find(record => record.id === 'project-mcp-vi');
+  const portfolio = candidate.projects.find(record => record.id === 'project-portfolio-vi');
+  vi.body[0].children.push(
+    { type: 'link', label: 'Project record link', target: { kind: 'record', collection: 'projects', recordId: mcp.id } },
+    { type: 'link', label: 'Project path link', target: { kind: 'internal', path: `/vi/projects/${mcp.slug}/` } },
+  );
+  vi.related = [{ collection: 'projects', recordId: mcp.id }, { collection: 'projects', recordId: portfolio.id }];
+  mcp.body = structuredClone(vi.body);
+  mcp.body[0].children.push({ type: 'link', label: 'Published article', target: { kind: 'record', collection: 'posts', recordId: vi.id } });
+  mcp.related = [{ collection: 'posts', recordId: vi.id }, { collection: 'projects', recordId: portfolio.id }];
   await build('published', candidate);
   for (const record of candidate.posts) {
     const html = await readFile(path.join(stage, 'out', record.locale, 'blog', record.slug, 'index.html'), 'utf8');
@@ -149,19 +209,36 @@ try {
     const expected = [record, ...record.translations.map(ref => candidate.posts.find(item => item.id === ref.recordId))].map(item => [item.locale, `https://damthienminh.id.vn/${item.locale}/blog/${item.slug}/`]);
     assert.deepEqual(alternates.sort(), expected.sort(), 'only actual translated article URLs');
   }
+  const linkedBlog = await readFile(path.join(stage, 'out/vi/blog', vi.slug, 'index.html'), 'utf8');
+  assert.ok(linkedBlog.includes(`href="/vi/projects/${mcp.slug}/">Project record link</a>`));
+  assert.ok(linkedBlog.includes(`href="/vi/projects/${mcp.slug}/">Project path link</a>`));
+  const linkedProject = await readFile(path.join(stage, 'out/vi/projects', mcp.slug, 'index.html'), 'utf8');
+  assert.ok(linkedProject.includes(`href="/vi/blog/${vi.slug}/">Published article</a>`));
   const removed = structuredClone(candidate);
   removed.posts = [structuredClone(vi)]; removed.posts[0].translations = [];
+  removed.projects = [structuredClone(mcp)]; removed.projects[0].translations = [];
+  removed.projects[0].related = [{ collection: 'posts', recordId: vi.id }];
+  removed.posts[0].related = [{ collection: 'projects', recordId: mcp.id }];
+  for (const settings of removed.settings) settings.featuredProjectIds = settings.featuredProjectIds.filter(id => id === mcp.id);
   await build('removed', removed);
   const remaining = await readFile(path.join(stage, 'out/vi/blog/index.html'), 'utf8');
   assert.ok(!remaining.includes(only.slug));
   const remainingArticle = await readFile(path.join(stage, 'out/vi/blog', vi.slug, 'index.html'), 'utf8');
   assert.ok(!remainingArticle.includes(`href="https://damthienminh.id.vn/en/blog/${en.slug}/"`));
+  const noProjects = structuredClone(removed);
+  noProjects.projects = [];
+  for (const settings of noProjects.settings) settings.featuredProjectIds = [];
+  noProjects.posts[0].related = [];
+  noProjects.posts[0].body[0].children = noProjects.posts[0].body[0].children.filter(item => item.type !== 'link' || item.label === 'Journal listing');
+  await build('all-projects-removed', noProjects);
   const draft = structuredClone(candidate); draft.posts[0].status = 'draft';
   await build('draft-rejected', draft, 1, 'schema.const');
+  const projectDraft = structuredClone(candidate); projectDraft.projects[0].status = 'draft';
+  await build('project-draft-rejected', projectDraft, 1, 'schema.const');
   const invalid = structuredClone(candidate); invalid.posts[0].related = [{ collection: 'posts', recordId: 'missing-published-post' }];
   await build('reference-rejected', invalid, 1, 'reference.publishedLocale');
   await build('final-empty', original);
-  console.log('Content routes: empty, bilingual/different slugs, VI-only, escaped blocks, metadata, removal and fail-closed build gates passed.');
+  console.log('Content routes: blog assertions preserved; genuine projects, translated slugs, escaped blocks, cross-collection links, partial/all removal and fail-closed gates passed.');
 } finally {
   assert.deepEqual(await readFile(path.join(repository, snapshotPath)), original, 'real snapshot bytes unchanged');
   if (logRoot) await writeFile(path.join(logRoot, 'route-evidence.json'), JSON.stringify(evidence, null, 2) + '\n');

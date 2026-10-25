@@ -51,11 +51,9 @@ export async function generateMetadata({ params }: { params: RouteParams }): Pro
 
 function href(target: LinkTarget, snapshot: Snapshot): string | null {
   if (target.kind === 'external') return target.url;
-  if (target.kind === 'internal') return target.path.includes('/projects/') ? null : target.path;
-  // Project detail routes are a later stage; retain an honest text label until they exist.
-  if (target.collection === 'projects') return null;
-  const post = snapshot.posts.find(record => record.id === target.recordId);
-  return post ? `/${post.locale}/blog/${post.slug}/` : null;
+  if (target.kind === 'internal') return target.path;
+  const record = snapshot[target.collection].find(item => item.id === target.recordId);
+  return record ? `/${record.locale}/${target.collection === 'posts' ? 'blog' : 'projects'}/${record.slug}/` : null;
 }
 function inlines(items: readonly Inline[], snapshot: Snapshot) {
   return items.map((item, i) => {
