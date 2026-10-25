@@ -34,7 +34,7 @@ export function createContentAdapter(options: ContentAdapterOptions = {}) {
   const repositoryRoot = options.repositoryRoot ?? defaultRepositoryRoot;
   if (!path.isAbsolute(repositoryRoot)) throw new ContentValidationError('', 'loader.repositoryRoot');
   // Copy trusted options once; caller mutations cannot change route policy mid-read.
-  const fixedRoutes = options.fixedRoutes ? Object.freeze([...options.fixedRoutes]) : undefined;
+  const fixedRoutes = Object.freeze([...(options.fixedRoutes ?? ['/', '/vi/', '/en/', '/vi/about/', '/en/about/', '/vi/blog/', '/en/blog/'])]);
 
   async function loadSnapshot(): Promise<Snapshot> {
     let raw: string;

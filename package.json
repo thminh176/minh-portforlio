@@ -22,7 +22,8 @@
     "test:lighthouse": "node scripts/verify-lighthouse.mjs",
     "test:content": "node --experimental-strip-types scripts/test-content-snapshot.mjs",
     "validate:content": "node --experimental-strip-types scripts/validate-content.mjs",
-    "test:content:loader": "node --experimental-strip-types scripts/test-content-loader.mjs"
+    "test:content:loader": "node --experimental-strip-types scripts/test-content-loader.mjs",
+    "test:content:routes": "node scripts/test-content-routes.mjs"
   },
   "dependencies": {
     "next": "^16.4.1",
