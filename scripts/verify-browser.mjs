@@ -952,10 +952,45 @@ async function runBrowserVerification() {
         await contrastPage.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle' });
         const measurement = await contrastPage.evaluate(() => {
           const isAbout = location.pathname.includes('/about/');
-          const selector = isAbout ? '.w-7.h-7.rounded-full, .w-6.h-6.rounded-full' : 'main h1 span, main > section:first-child p, main > section:first-child a, #work h2, #work article h3, #work article p, #work article span, #work article a';
-          const elements = [...document.querySelectorAll(selector)].filter((element) => element.getClientRects().length && element.textContent.trim() && element.getAttribute('aria-hidden') !== 'true');
+          const selector = isAbout ? 'main h1, main h2, main h3, main p, main a, main span' : 'main h1 span, main > section:first-child p, main > section:first-child a, #work h2, #work article h3, #work article p, #work article span, #work article a';
+          const elements = [...document.querySelectorAll(selector)].filter((element) => {
+            if (!isAbout) return element.getClientRects().length && element.textContent.trim() && element.getAttribute('aria-hidden') !== 'true';
+            if (!element.checkVisibility({ visibilityProperty: true }) || element.closest('[aria-hidden="true"]')) return false;
+            // Measure the element painting each text node, rather than a parent
+            // whose descendants can use different foreground colors.
+            return [...element.childNodes].some((node) => {
+              if (node.nodeType !== Node.TEXT_NODE || !node.textContent.trim()) return false;
+              const range = document.createRange();
+              range.selectNodeContents(node);
+              return [...range.getClientRects()].some((rect) => rect.width > 0 && rect.height > 0);
+            });
+          });
           if (!elements.length) throw new Error(`Contrast targets missing: ${selector}`);
-          return elements.map((badge) => {
+          if (isAbout) {
+            // Keep broad text sampling accountable to the approved editorial
+            // structure: a lone label or CTA cannot satisfy this probe.
+            const requireText = (scope, minimum) => {
+              const covered = [...document.querySelectorAll(scope)].filter((target) => elements.some((element) => target.contains(element)));
+              if (covered.length < minimum) throw new Error(`About contrast coverage missing: ${scope} (${covered.length}/${minimum})`);
+              return covered;
+            };
+            requireText('main > section:nth-of-type(1) h1', 1);
+            requireText('main > section:nth-of-type(1) p', 2);
+            requireText('main > section:nth-of-type(2) h2', 1);
+            const rowHeadings = requireText('main > section:nth-of-type(2) h3', 3);
+            for (const heading of rowHeadings) {
+              const row = heading.parentElement.parentElement;
+              if (![...row.querySelectorAll('p')].some((paragraph) => elements.some((element) => paragraph.contains(element)))) {
+                throw new Error(`About contrast row description missing: ${heading.textContent.trim()}`);
+              }
+            }
+            requireText('main > section:nth-of-type(3) h2', 1);
+            requireText('main > section:nth-of-type(3) p', 2);
+            requireText('main > section:nth-of-type(4) h2', 1);
+            requireText('main > section:nth-of-type(4) p', 1);
+            requireText('main > section:nth-of-type(4) a[href$="/#contact"]', 1);
+          }
+          return elements.map((textElement) => {
             function rgba(value) {
               // Tailwind alpha utilities may compute to color(srgb ... / alpha),
               // whose channels use 0..1 rather than rgb()'s 0..255 scale.
@@ -1001,7 +1036,7 @@ async function runBrowserVerification() {
               return fg.slice(0, 3).map((channel, i) => channel * fg[3] + bg[i] * (1 - fg[3]));
             }
             const layers = [];
-            for (let element = badge; element; element = element.parentElement) {
+            for (let element = textElement; element; element = element.parentElement) {
               const style = getComputedStyle(element);
               if (style.backgroundImage !== 'none' || Number(style.opacity) !== 1) {
                 throw new Error('Text contrast requires manual image/opacity review');
@@ -1010,7 +1045,7 @@ async function runBrowserVerification() {
             }
             let background = [255, 255, 255];
             for (const layer of layers.toReversed()) background = over(rgba(layer), background);
-            const color = getComputedStyle(badge).color;
+            const color = getComputedStyle(textElement).color;
             const foreground = over(rgba(color), background);
             function luminance(rgb) {
               const channels = rgb.map((value) => {
@@ -1020,15 +1055,15 @@ async function runBrowserVerification() {
               return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
             }
             const a = luminance(foreground), b = luminance(background);
-            const computed = getComputedStyle(badge);
+            const computed = getComputedStyle(textElement);
             const large = parseFloat(computed.fontSize) >= 24 || (parseFloat(computed.fontSize) >= 18.666666666666668 && parseInt(computed.fontWeight, 10) >= 700);
-            return { threshold: large ? 3 : 4.5, text: badge.textContent.trim(), tag: badge.tagName, color, layers, foreground, background, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
+            return { threshold: large ? 3 : 4.5, text: textElement.textContent.trim(), tag: textElement.tagName, color, layers, foreground, background, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
           });
         });
         contrastMeasurements.push({ theme, route, textSurfaces: measurement });
         fs.writeFileSync(path.join(evidenceDir, 'text-contrast.json'), JSON.stringify(contrastMeasurements, null, 2));
         await contrastContext.close();
-        const minimum = Math.min(...measurement.map((badge) => badge.ratio));
+        const minimum = Math.min(...measurement.map((item) => item.ratio));
         if (measurement.some((item) => item.ratio < item.threshold)) {
           const failure = `Text contrast failed (${theme}, ${route}): ${JSON.stringify(measurement.filter((item) => item.ratio < item.threshold))}`;
           deferredFailures.push(failure);
