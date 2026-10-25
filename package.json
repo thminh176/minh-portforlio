@@ -19,7 +19,8 @@
     "test:contact:browser": "node scripts/test-enabled-contact-browser.mjs",
     "test:browser": "node scripts/verify-browser.mjs",
     "ci": "pnpm check && pnpm build && pnpm smoke:export",
-    "test:lighthouse": "node scripts/verify-lighthouse.mjs"
+    "test:lighthouse": "node scripts/verify-lighthouse.mjs",
+    "test:content": "node --experimental-strip-types scripts/test-content-snapshot.mjs"
   },
   "dependencies": {
     "next": "^16.4.1",
@@ -32,11 +33,13 @@
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "ajv": "6.15.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.1",
     "lighthouse": "13.5.0",
     "playwright-core": "^1.64.0",
     "postcss": "^8.5.29",
+    "sharp": "0.35.5",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.8.3",
     "wrangler": "4.149.0"

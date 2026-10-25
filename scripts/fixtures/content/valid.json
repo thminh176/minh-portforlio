@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "siteId": "dtm",
+  "revision": "fixture-zero-001",
+  "exportedAt": "2026-10-26T00:00:00Z",
+  "locales": [
+    "vi",
+    "en"
+  ],
+  "profiles": [
+    {
+      "id": "profile-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T00:00:00Z",
+      "updatedAt": "2026-10-25T00:00:00Z",
+      "name": "Đàm Thiên Minh",
+      "role": "Web Developer",
+      "tagline": "Mình làm web và chia sẻ các dự án cá nhân cùng ghi chép học tập.",
+      "bioSummary": "Mình làm các dự án web, có kinh nghiệm triển khai hạ tầng và đang học thêm về backend, DevOps.",
+      "aboutStory": [
+        "Mình là Minh. Mình làm các dự án web và chia sẻ ghi chép về quá trình học, xây dựng chúng tại đây.",
+        "Mình đã làm việc với ứng dụng Next.js và triển khai trên Ubuntu Server, sử dụng Docker, PostgreSQL và Cloudflare."
+      ],
+      "hero": {
+        "kicker": "Đàm Thiên Minh / Web Developer",
+        "headlineLines": [
+          "Mình làm web.",
+          "Đây là những gì",
+          "mình đang xây."
+        ],
+        "supporting": "Mình chia sẻ các dự án cá nhân và ghi chép về quá trình học, làm web ở đây."
+      }
+    },
+    {
+      "id": "profile-en",
+      "locale": "en",
+      "status": "published",
+      "publishedAt": "2026-10-25T00:00:00Z",
+      "updatedAt": "2026-10-25T00:00:00Z",
+      "name": "Thien Minh Dam",
+      "role": "Web Developer",
+      "tagline": "I build for the web and share personal projects and learning notes.",
+      "bioSummary": "I work on web projects, have deployment experience and am learning more about backend engineering and DevOps.",
+      "aboutStory": [
+        "I'm Minh. I work on web projects and share notes here about learning and building them.",
+        "I have worked with Next.js applications and deployments on Ubuntu Server, using Docker, PostgreSQL and Cloudflare."
+      ],
+      "hero": {
+        "kicker": "Thien Minh Dam / Web Developer",
+        "headlineLines": [
+          "I build for the web.",
+          "Here's what I'm",
+          "working on."
+        ],
+        "supporting": "A place for my personal projects and notes on learning and building for the web."
+      }
+    }
+  ],
+  "settings": [
+    {
+      "id": "settings-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T00:00:00Z",
+      "updatedAt": "2026-10-25T00:00:00Z",
+      "siteTitle": "Đàm Thiên Minh",
+      "siteDescription": "Portfolio cá nhân của Đàm Thiên Minh.",
+      "journalTitle": "Ghi chép về việc học và làm web",
+      "journalEmptyText": "Mình chưa đăng bài nào. Khi có ghi chép đủ rõ, mình sẽ chia sẻ ở đây.",
+      "featuredProjectIds": [
+        "project-mcp-vi"
+      ],
+      "recentPostLimit": 3
+    },
+    {
+      "id": "settings-en",
+      "locale": "en",
+      "status": "published",
+      "publishedAt": "2026-10-25T00:00:00Z",
+      "updatedAt": "2026-10-25T00:00:00Z",
+      "siteTitle": "Thien Minh Dam",
+      "siteDescription": "Personal portfolio of Thien Minh Dam.",
+      "journalTitle": "Notes on learning and building for the web",
+      "journalEmptyText": "No posts yet. I'll share notes here when they're ready.",
+      "featuredProjectIds": [],
+      "recentPostLimit": 3
+    }
+  ],
+  "posts": [
+    {
+      "id": "fixture-post-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T00:00:00Z",
+      "updatedAt": "2026-10-25T00:00:00Z",
+      "translationGroup": "fixture-note",
+      "translations": [],
+      "slug": "fixture-note",
+      "title": "Test-only note",
+      "metadata": {
+        "title": "Test-only note",
+        "description": "Synthetic fixture; never publish this example."
+      },
+      "body": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "Test-only published projection."
+            },
+            {
+              "type": "link",
+              "label": "About",
+              "target": {
+                "kind": "internal",
+                "path": "/vi/about/"
+              }
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Fixture heading"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            [
+              {
+                "type": "text",
+                "text": "A fixture item"
+              }
+            ]
+          ]
+        },
+        {
+          "type": "quote",
+          "children": [
+            {
+              "type": "text",
+              "text": "Fixture quote"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "json",
+          "code": "{\"fixture\":true}"
+        }
+      ],
+      "related": [],
+      "excerpt": "Synthetic example for validator tests only.",
+      "tags": [
+        "fixture"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "project-mcp-vi",
+      "locale": "vi",
+      "status": "published",
+      "publishedAt": "2026-10-25T00:00:00Z",
+      "updatedAt": "2026-10-25T00:00:00Z",
+      "translationGroup": "project-mcp",
+      "translations": [],
+      "slug": "mcp-project-assistant",
+      "title": "MCP Project Assistant",
+      "metadata": {
+        "title": "MCP Project Assistant",
+        "description": "MCP server chạy local để đọc mã, tìm kiếm và xem Git diff."
+      },
+      "body": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "MCP server chạy local giúp AI đọc mã, tìm kiếm và xem Git diff trong workspace đã chọn. Thay đổi được xem trước trước khi áp dụng."
+            }
+          ]
+        }
+      ],
+      "related": [],
+      "summary": "MCP server chạy local giúp AI đọc mã, tìm kiếm và xem Git diff trong workspace đã chọn. Thay đổi được xem trước trước khi áp dụng.",
+      "order": 0,
+      "technologies": [
+        "TypeScript",
+        "MCP SDK",
+        "Windows / WSL"
+      ],
+      "sourceUrl": "https://github.com/thminh176/mcp-project-assistant"
+    }
+  ],
+  "media": []
+}
