@@ -65,107 +65,137 @@ export default async function AboutPage({
   const isVi = locale === 'vi';
   const dict = getDictionary(locale);
   const profile = isVi ? profileConfig.vi : profileConfig.en;
+  const kicker = isVi ? 'VỀ MÌNH' : 'ABOUT';
 
   return (
     <div className="flex-1 flex flex-col justify-between">
       <Header locale={locale} activeRoute="about" />
 
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-12 sm:py-16 space-y-16 sm:space-y-24 focus:outline-none">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-8 space-y-16 sm:space-y-24 focus:outline-none"
+      >
         {/* 1. Header / Intro Narrative */}
-        <section className="space-y-6">
-          <div className="inline-block px-3.5 py-1.5 rounded-full text-xs font-medium bg-[var(--bg-surface)] text-[var(--accent-primary)] border border-[var(--border-strong)]">
-            {dict.about.badge}
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[var(--text-primary)]">
-            {dict.about.title}
-          </h1>
-          <p className="text-base sm:text-xl text-[var(--text-secondary)] leading-relaxed max-w-3xl">
-            {dict.about.lead}
-          </p>
+        <section className="pt-0 sm:pt-2 pb-8 sm:pb-12 border-b border-[var(--color-border)] text-left">
+          <div className="max-w-3xl flex flex-col gap-4 sm:gap-6">
+            {/* Identity Kicker */}
+            <div className="font-mono text-xs sm:text-sm tracking-wider uppercase text-[var(--color-brick-deep)] font-semibold">
+              {kicker}
+            </div>
 
-          <div className="space-y-4 pt-4 border-t border-[var(--border-subtle)] text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-3xl">
-            {profile.aboutStory.map((paragraph, idx) => (
-              <p key={idx}>{paragraph}</p>
-            ))}
+            {/* Single Semantic H1: Page Title */}
+            <h1 className="font-display text-[32px] leading-[1.18] sm:text-4xl sm:leading-tight md:text-5xl lg:text-[56px] lg:leading-[1.12] font-bold text-[var(--color-ink)] tracking-tight">
+              {dict.about.title}
+            </h1>
+
+            {/* Supporting Lead Copy */}
+            <p className="font-body text-base sm:text-xl text-[var(--text-secondary)] leading-relaxed max-w-2xl">
+              {dict.about.lead}
+            </p>
+
+            {/* Factual Story Paragraphs */}
+            <div className="space-y-4 pt-4 sm:pt-6 border-t border-[var(--color-border)] font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-2xl">
+              {profile.aboutStory.map((paragraph, idx) => (
+                <p key={idx}>{paragraph}</p>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* 2. Approach to Website Projects */}
-        <section className="p-8 sm:p-10 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-8 shadow-sm transition-colors">
+        {/* 2. Technologies & Work Experience */}
+        <section className="space-y-6 sm:space-y-8">
+          {/* Mono Ledger Header */}
+          <div className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] pb-3 border-b border-[var(--color-border)]">
+            <span>{isVi ? 'KINH NGHIỆM & DỰ ÁN' : 'EXPERIENCE & PROJECTS'}</span>
+          </div>
+
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-5 rounded-full bg-[var(--accent-primary)]" aria-hidden="true" />
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-                {dict.about.approachTitle}
-              </h2>
-            </div>
-            <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)]">
+              {dict.about.approachTitle}
+            </h2>
+            <p className="font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-2xl">
               {dict.about.approachSubtitle}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          {/* 3 Editorial Rows divided by rules (stack on mobile, index/category left, description right) */}
+          <div className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
             {dict.about.approachPoints.map((point, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-3 transition-colors"
+                className="py-6 sm:py-8 flex flex-col md:flex-row md:items-start gap-3 md:gap-8 lg:gap-12"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-6 h-6 rounded-full bg-[var(--accent-subtle)] text-[var(--accent-hover)] text-xs font-bold flex items-center justify-center shrink-0">
-                    {idx + 1}
+                <div className="flex items-center gap-3 md:w-1/3 shrink-0">
+                  <span className="font-mono text-xs font-semibold text-[var(--color-brick-deep)]">
+                    0{idx + 1}
                   </span>
-                  <h3 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
+                  <h3 className="font-mono text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--color-ink)]">
                     {point.title}
                   </h3>
                 </div>
-                <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-                  {point.description}
-                </p>
+                <div className="md:w-2/3">
+                  <p className="font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
+                    {point.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* 3. Services Overview */}
-        <section className="p-8 sm:p-10 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-6 shadow-sm transition-colors">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-5 rounded-full bg-[var(--accent-primary)]" aria-hidden="true" />
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+        {/* 3. Continued Learning Section */}
+        <section className="space-y-6 sm:space-y-8">
+          {/* Mono Ledger Header */}
+          <div className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] pb-3 border-b border-[var(--color-border)]">
+            <span>{isVi ? 'HỌC HỎI & PHÁT TRIỂN' : 'CONTINUED LEARNING'}</span>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)]">
               {dict.about.servicesTitle}
             </h2>
+            <p className="font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-2xl">
+              {dict.about.servicesSubtitle}
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-            {dict.about.servicesSubtitle}
-          </p>
 
-          <div className="space-y-4 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
-            {dict.about.servicesText.map((p, idx) => (
-              <p key={idx}>{p}</p>
+          {/* Plain editorial paragraphs without card containers or badge filler */}
+          <div className="space-y-4 pt-2 font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-3xl">
+            {dict.about.servicesText.map((paragraph, idx) => (
+              <p key={idx}>{paragraph}</p>
             ))}
           </div>
         </section>
 
-        {/* 4. Contact CTA */}
-        <section className="p-8 sm:p-10 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-strong)] text-center space-y-6 shadow-sm transition-colors">
-          <div className="space-y-2 max-w-xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-              {dict.about.contactCtaTitle}
-            </h2>
-            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              {dict.about.contactCtaSubtitle}
-            </p>
+        {/* 4. Contact & Inquiries Section */}
+        <section className="space-y-6 sm:space-y-8">
+          {/* Mono Ledger Header */}
+          <div className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] pb-3 border-b border-[var(--color-border)]">
+            <span>{isVi ? 'LIÊN HỆ & TRAO ĐỔI' : 'CONTACT & INQUIRIES'}</span>
           </div>
 
-          <DirectContact locale={locale} variant="compact" />
+          <div className="bg-[var(--color-subtle)] border border-[var(--color-border)] rounded-xs p-6 sm:p-10 lg:p-12 space-y-8 text-center">
+            <div className="space-y-3 max-w-xl mx-auto">
+              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--color-ink)]">
+                {dict.about.contactCtaTitle}
+              </h2>
+              <p className="font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
+                {dict.about.contactCtaSubtitle}
+              </p>
+            </div>
 
-          <div className="flex justify-center pt-2">
-            <Link
-              href={`/${locale}/#contact`}
+            <DirectContact locale={locale} variant="compact" />
 
-              className="min-h-[48px] px-8 py-3 rounded-lg bg-[var(--accent-primary)] text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] font-semibold text-sm transition-colors shadow-md flex items-center justify-center cursor-pointer"
-            >
-              {dict.about.contactCtaButton}
-            </Link>
+            <div className="flex justify-center pt-2">
+              <Link
+                href={`/${locale}/#contact`}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[var(--color-dark)] text-white hover:bg-[var(--color-ink)] font-medium text-sm sm:text-base transition-colors focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2 min-h-[44px] rounded-xs cursor-pointer"
+              >
+                <span>{dict.about.contactCtaButton}</span>
+                <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
           </div>
         </section>
       </main>
