@@ -5,6 +5,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 import {
   locateBrowserExecutable,
   createStrictStaticServer,
+  closeBrowserContextsBounded,
   closeBrowserBounded,
 } from './verification-helpers.mjs';
 
@@ -41,7 +42,7 @@ async function runBrowserVerification() {
   console.log(`[verify-browser] Ephemeral bounded static server listening on ${baseUrl}`);
 
   let browser = null;
-  let cleanupError = null;
+  let primaryError = null;
 
   try {
     browser = await chromium.launch({
@@ -1223,6 +1224,7 @@ async function runBrowserVerification() {
 
     console.log('\n[verify-browser] ALL BROWSER VERIFICATION PHASES (1 THROUGH 14) PASSED SUCCESSFULLY.\n');
   } catch (error) {
+    primaryError = error;
     const pages = browser?.contexts().flatMap((current) => current.pages()) || [];
     const failure = { message: error.message, stack: error.stack, pages: [] };
     for (const [index, current] of pages.entries()) {
@@ -1240,26 +1242,42 @@ async function runBrowserVerification() {
   } finally {
     // Bounded cleanup for both browser and static server
     console.log('[verify-browser] Cleaning up browser and static server resources...');
-    if (browser) {
+    const cleanupStarted = performance.now();
+    const cleanupErrors = [];
+    const cleanup = {
+      contexts: browser?.contexts().length || 0,
+      pages: browser?.contexts().reduce((sum, context) => sum + context.pages().length, 0) || 0,
+      steps: [],
+    };
+    async function dispose(resource, close) {
+      const started = performance.now();
       try {
-        await closeBrowserBounded(browser, 5000);
-      } catch (err) {
-        console.error('[verify-browser] Error during browser closure:', err);
-        cleanupError = cleanupError || err;
+        await close();
+        cleanup.steps.push({ resource, elapsedMs: performance.now() - started });
+      } catch (error) {
+        cleanupErrors.push(error);
+        cleanup.steps.push({ resource, elapsedMs: performance.now() - started, error: { message: error.message, stack: error.stack } });
+        console.error(`[verify-browser] Error during ${resource} closure:`, error);
       }
+    }
+    if (browser) {
+      await dispose('browser contexts', () => closeBrowserContextsBounded(browser, 5000));
+      await dispose('browser', () => closeBrowserBounded(browser, 5000));
     }
 
     if (staticServer) {
-      try {
-        await staticServer.closeBounded(5000);
-      } catch (err) {
-        console.error('[verify-browser] Error during static server closure:', err);
-        cleanupError = cleanupError || err;
-      }
+      await dispose('static server', () => staticServer.closeBounded(5000));
     }
 
-    if (cleanupError) {
-      throw cleanupError;
+    cleanup.elapsedMs = performance.now() - cleanupStarted;
+    cleanup.browserConnected = browser?.isConnected() || false;
+    cleanup.primaryError = primaryError ? { message: primaryError.message, stack: primaryError.stack } : null;
+    fs.writeFileSync(path.join(evidenceDir, 'cleanup-report.json'), JSON.stringify(cleanup, null, 2));
+    console.log(`[verify-browser] Cleanup finished in ${cleanup.elapsedMs.toFixed(1)}ms (${cleanupErrors.length} errors).`);
+    // The catch rethrows the original assertion. Record every cleanup failure
+    // without allowing finally to replace that primary finding.
+    if (cleanupErrors.length && !primaryError) {
+      throw new AggregateError(cleanupErrors, 'Browser verification resource cleanup failed');
     }
   }
 }

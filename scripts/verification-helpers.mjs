@@ -180,6 +180,29 @@ export async function createStrictStaticServer({ rootDir, port = 0, mimeTypes = 
 }
 
 /**
+ * Dispose explicitly owned contexts before closing their browser process.
+ * Keep this separate so existing closeBrowserBounded callers retain their
+ * timeout contract and browser closure can still be attempted after failure.
+ */
+export async function closeBrowserContextsBounded(browser, timeoutMs = 5000) {
+  if (!browser) return;
+
+  let timer = null;
+  try {
+    await Promise.race([
+      Promise.all(browser.contexts().map((context) => context.close())),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`Browser contexts close timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
  * Bounded browser closure with explicit timeout and cleared timers.
  */
 export async function closeBrowserBounded(browser, timeoutMs = 5000) {
