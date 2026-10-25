@@ -4,8 +4,9 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import BlogListing from '@/components/blog/BlogListing';
 import { getPosts, loadSnapshot } from '@/lib/content';
-import type { Block, ImageUse, Inline, LinkTarget, Snapshot } from '@/lib/content/types';
+import type { Block, ImageUse, Inline, LinkTarget, Locale, Snapshot } from '@/lib/content/types';
 import { siteConfig } from '@/config/site';
 
 // Optional catch-all exports the real listings even when no published article exists.
@@ -99,17 +100,9 @@ export default async function BlogPage({ params }: { params: RouteParams }) {
             {post.cover ? image(post.cover, snapshot) : null}
             <div className="space-y-6">{post.body.map((block, i) => <div key={i}>{bodyBlock(block, snapshot)}</div>)}</div>
           </article>
-        </> : <>
-          <h1 className="font-display text-3xl sm:text-5xl">{settings.journalTitle}</h1>
-          {posts.length === 0 ? <p data-blog-empty>{settings.journalEmptyText}</p> : (
-            <ul className="space-y-8" data-blog-list>
-              {posts.map(record => <li key={record.id}>
-                <h2 className="font-display text-2xl"><Link href={`/${locale}/blog/${record.slug}/`}>{record.title}</Link></h2>
-                <p>{record.excerpt}</p>
-              </li>)}
-            </ul>
-          )}
-        </>}
+        </> : (
+          <BlogListing posts={posts} settings={settings} locale={locale as Locale} />
+        )}
       </main>
       <Footer locale={locale} />
     </div>
