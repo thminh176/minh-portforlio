@@ -11,7 +11,9 @@ export interface ProjectDetailProps {
 
 function renderCoverImage(use: ImageUse, snapshot: Snapshot) {
   const media = snapshot.media.find(asset => asset.id === use.mediaId);
-  if (!media) return null;
+  if (!media) {
+    throw new Error('Invariant violation: referenced cover media asset not found in snapshot');
+  }
   const isDecorative = !use.alt;
   return (
     <figure className="my-8 space-y-2">
@@ -35,8 +37,12 @@ function renderCoverImage(use: ImageUse, snapshot: Snapshot) {
 
 export default function ProjectDetail({ locale, project, snapshot }: ProjectDetailProps) {
   const isVi = locale === 'vi';
-  const isMcp = project.translationGroup === 'mcp-project-assistant';
-  const isPortfolio = project.translationGroup === 'personal-portfolio';
+  const isMcp =
+    project.translationGroup === 'mcp-project-assistant' &&
+    project.sourceUrl === 'https://github.com/thminh176/mcp-project-assistant';
+  const isPortfolio =
+    project.translationGroup === 'personal-portfolio' &&
+    project.sourceUrl === 'https://github.com/thminh176/minh-portforlio';
 
   const sourceLabel = isVi ? 'Mã nguồn trên GitHub' : 'View source on GitHub';
   const liveLabel = isVi ? 'Xem website' : 'Visit website';
