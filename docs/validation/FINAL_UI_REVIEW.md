@@ -144,7 +144,7 @@ Previous M08 documentation contained conflicting contrast numbers (e.g., claimin
   - Projects: **4** (`project-mcp-en`, `project-mcp-vi`, `project-portfolio-en`, `project-portfolio-vi`)
   - Posts: **0**
   - Media: **0**
-- *Note:* The previously cited SHA256 (`92b1a52b8fbce4e6f4a86b3cb7cfb62e49c719ef16eb30b355819df515e02ba4`) was an erroneous reference from an earlier snapshot draft. The current byte hash is stable and verified.
+- *Note:* The previously cited SHA256 (`92b1a52b8fbce4e6f4a86b3cb7cfb62e49c719ef16eb30b355819df515e02ba4`) was an incorrect value in the prior report. The current byte hash is stable and verified.
 
 ---
 
