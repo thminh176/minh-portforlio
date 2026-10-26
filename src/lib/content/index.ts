@@ -3,6 +3,7 @@ import { lstat, readFile, readdir, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { ContentValidationError, validateSnapshot, validateSnapshotMedia } from './validate.ts';
 import type { Collection, Locale, Post, Profile, Project, SiteSettings, Snapshot, ValidationOptions } from './types.ts';
+import { FIXED_ROUTES } from './routes.ts';
 
 export interface ContentAdapterOptions extends ValidationOptions {
   /** Trusted engineering/test configuration only. Never read this from snapshot, env or public request input. */
@@ -34,7 +35,7 @@ export function createContentAdapter(options: ContentAdapterOptions = {}) {
   const repositoryRoot = options.repositoryRoot ?? defaultRepositoryRoot;
   if (!path.isAbsolute(repositoryRoot)) throw new ContentValidationError('', 'loader.repositoryRoot');
   // Copy trusted options once; caller mutations cannot change route policy mid-read.
-  const fixedRoutes = Object.freeze([...(options.fixedRoutes ?? ['/', '/vi/', '/en/', '/vi/about/', '/en/about/', '/vi/blog/', '/en/blog/'])]);
+  const fixedRoutes = Object.freeze([...(options.fixedRoutes ?? FIXED_ROUTES)]);
 
   async function loadSnapshot(): Promise<Snapshot> {
     let raw: string;

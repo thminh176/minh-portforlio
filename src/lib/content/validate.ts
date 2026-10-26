@@ -6,6 +6,7 @@ import { lstat, open, readdir, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { isIP } from 'node:net';
 import schema from '../../../content/schema/published-snapshot.v1.schema.json' with { type: 'json' };
+import { FIXED_ROUTES } from './routes.ts';
 import type {
   Collection, ContentRecord, ImageUse, LinkTarget, MediaValidationOptions,
   Snapshot, ValidationIssue, ValidationOptions,
@@ -186,8 +187,8 @@ function externalUrl(url: string, pointer: string): void {
       /[\u0000-\u0020\u007f-\u009f\\]/u.test(decoded)) fail(pointer, 'link.external');
   } catch { fail(pointer, 'link.external'); }
 }
-const fixedPattern = /^(?:\/$|\/(vi|en)\/(?:$|(?:about|contact|blog)\/$))/;
-const dtmPathPattern = /^\/(?:$|(?:vi|en)\/(?:$|(?:about|contact|blog)\/$|(?:blog|projects)\/[a-z0-9]+(?:-[a-z0-9]+)*\/$))/;
+const fixedPattern = /^(?:\/|\/(?:vi|en)\/(?:|about\/|contact\/|blog\/|projects\/))$/;
+const dtmPathPattern = /^(?:\/|\/(?:vi|en)\/(?:|about\/|contact\/|blog\/|projects\/|(?:blog|projects)\/[a-z0-9]+(?:-[a-z0-9]+)*\/))$/;
 const acceptedSnapshots = new WeakSet<object>();
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -230,7 +231,7 @@ export function validateSnapshot(input: unknown, options: ValidationOptions = {}
   ordered(data.media, (a, b) => cmp(a.id, b.id), '/media');
   const indexes = { posts: new Map(data.posts.map(item => [item.id, item])), projects: new Map(data.projects.map(item => [item.id, item])) };
   const routes = new Set<string>();
-  const fixedRoutes = options.fixedRoutes ?? ['/', '/vi/', '/en/', '/vi/about/', '/en/about/'];
+  const fixedRoutes = options.fixedRoutes ?? FIXED_ROUTES;
   for (const route of fixedRoutes) {
     if (!fixedPattern.test(route) || route.trim() !== route) fail('', 'options.fixedRoutes');
     routes.add(route);

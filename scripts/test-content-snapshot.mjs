@@ -120,7 +120,7 @@ for (const [name, mutate, rule] of [
   ['dangling internal path', x => { link(x, { kind: 'internal', path: '/vi/blog/removed/' }); }, 'link.internalRoute'],
   ['DVT vn route cannot leak', x => { link(x, { kind: 'internal', path: '/vn/blog/fixture-note/' }); }, 'link.internalRoute'],
   ['cross-locale internal link', x => { link(x, { kind: 'internal', path: '/en/about/' }); }, 'link.internalRoute'],
-  ['unimplemented contact fixed page', x => { link(x, { kind: 'internal', path: '/vi/contact/' }); }, 'link.internalRoute'],
+  ['nonexistent fixed page', x => { link(x, { kind: 'internal', path: '/vi/ghost/' }); }, 'link.internalRoute'],
   ['unsorted tags', x => { x.posts[0].tags = ['z', 'a']; }, 'order.deterministic'],
 ]) await rejected(name, mutate, false, rule);
 await test('valid code and inline whitespace remain inert and unchanged', () => {
@@ -154,9 +154,13 @@ await test('cross-collection equal slugs are allowed and stable record links res
   validateSnapshot(candidate);
 });
 await test('trusted implemented fixed route is accepted, invalid option is rejected', () => {
-  const candidate = clone(valid); link(candidate, { kind: 'internal', path: '/vi/contact/' });
-  validateSnapshot(candidate, { fixedRoutes: ['/', '/vi/contact/'] });
+  for (const route of ['/vi/contact/', '/vi/projects/']) {
+    const candidate = clone(valid); link(candidate, { kind: 'internal', path: route });
+    validateSnapshot(candidate);
+    errorRule(() => validateSnapshot(candidate, { fixedRoutes: ['/', '/vi/'] }), 'link.internalRoute');
+  }
   errorRule(() => validateSnapshot(valid, { fixedRoutes: ['/vn/'] }), 'options.fixedRoutes');
+  errorRule(() => validateSnapshot(valid, { fixedRoutes: ['/vi/contact/extra/'] }), 'options.fixedRoutes');
 });
 for (const [name, mutate] of [
   ['post timestamp descending order', x => { const p = clone(x.posts[0]); p.id = 'fixture-z-other'; p.slug = 'other'; p.translationGroup = 'other'; p.publishedAt = p.updatedAt = '2026-10-26T00:00:00Z'; x.posts.push(p); }],

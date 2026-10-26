@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { loadSnapshot } from '../src/lib/content/index.ts';
+import { publishedPaths } from '../src/lib/content/routes.ts';
 
 const outDir = path.resolve('out');
 
@@ -239,27 +241,21 @@ if (!isProduction) {
   }
 }
 
-// 9. Sitemap.xml checks (strictly the 4 published routes)
+// 9. Sitemap.xml must match the complete validated publication and physical export.
 const sitemapXml = fs.readFileSync(path.join(outDir, 'sitemap.xml'), 'utf8');
-const expectedSitemapUrls = [
-  'https://damthienminh.id.vn/vi/',
-  'https://damthienminh.id.vn/en/',
-  'https://damthienminh.id.vn/vi/about/',
-  'https://damthienminh.id.vn/en/about/',
-];
-
-for (const url of expectedSitemapUrls) {
-  if (!sitemapXml.includes(`<loc>${url}</loc>`)) {
-    console.error(`[smoke:export] FAIL: sitemap.xml missing published URL ${url}.`);
+const snapshot = await loadSnapshot();
+const expectedSitemapUrls = publishedPaths(snapshot).map(route => `https://damthienminh.id.vn${route}`);
+const actualSitemapUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
+if (JSON.stringify(actualSitemapUrls) !== JSON.stringify(expectedSitemapUrls)) {
+  console.error('[smoke:export] FAIL: sitemap.xml differs from the exact published route inventory.');
+  process.exit(1);
+}
+for (const route of publishedPaths(snapshot)) {
+  const htmlPath = path.join(outDir, ...route.split('/').filter(Boolean), 'index.html');
+  if (!fs.existsSync(htmlPath) || fs.statSync(htmlPath).size === 0) {
+    console.error(`[smoke:export] FAIL: published route ${route} has no physical exported HTML.`);
     process.exit(1);
   }
-}
-
-// Count occurrences of <loc> in sitemap.xml
-const locMatches = sitemapXml.match(/<loc>/g) || [];
-if (locMatches.length !== 4) {
-  console.error(`[smoke:export] FAIL: sitemap.xml has ${locMatches.length} URLs; strictly 4 expected.`);
-  process.exit(1);
 }
 
 // 10. Truthful JSON-LD checks

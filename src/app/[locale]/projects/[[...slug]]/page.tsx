@@ -7,6 +7,7 @@ import ProjectListing from '@/components/projects/ProjectListing';
 import { getProjects, loadSnapshot } from '@/lib/content';
 import type { Locale, Project, SiteSettings, Snapshot } from '@/lib/content/types';
 import { siteConfig } from '@/config/site';
+import { detailMetadata, fixedMetadata } from '@/lib/content/seo';
 
 // Optional catch-all exports the real listings even when no published project exists.
 // Next 16 output:export rejects a separate detail route with zero static params.
@@ -34,29 +35,9 @@ async function route(params: RouteParams): Promise<RouteData> {
   return { locale, project, projects, settings, snapshot };
 }
 export async function generateMetadata({ params }: { params: RouteParams }): Promise<Metadata> {
-  const { locale, project, settings, snapshot } = await route(params);
-  const canonical = `${siteConfig.baseUrl}/${locale}/projects/${project ? project.slug + '/' : ''}`;
-  const languages: Record<string, string> = { [locale]: canonical };
-  if (project) {
-    for (const reference of project.translations) {
-      const target = snapshot.projects.find(record => record.id === reference.recordId && record.locale === reference.locale);
-      if (target) languages[target.locale] = `${siteConfig.baseUrl}/${target.locale}/projects/${target.slug}/`;
-    }
-  } else {
-    for (const language of snapshot.locales) languages[language] = `${siteConfig.baseUrl}/${language}/projects/`;
-  }
-  const title = project ? project.metadata.title : `${indexTitle(locale)} | ${settings.siteTitle}`;
-  const description = project ? project.metadata.description : settings.siteDescription;
-  return {
-    metadataBase: new URL(siteConfig.baseUrl), title, description,
-    alternates: { canonical, languages },
-    openGraph: { title, description, url: canonical, siteName: settings.siteTitle, locale: locale === 'vi' ? 'vi_VN' : 'en_US', type: 'website' },
-    twitter: { card: 'summary', title, description },
-    robots: siteConfig.isProduction ? { index: true, follow: true } : { index: false, follow: false },
-  };
+  const { locale, project, snapshot } = await route(params);
+  return project ? detailMetadata(snapshot, project, 'projects', siteConfig) : fixedMetadata(snapshot, locale, 'projects', siteConfig);
 }
-
-function indexTitle(locale: Locale) { return locale === 'vi' ? 'Dự án' : 'Projects'; }
 
 export default async function ProjectPage({ params }: { params: RouteParams }) {
   const { locale, project, projects, settings, snapshot } = await route(params);

@@ -4,8 +4,9 @@ import Footer from '@/components/Footer';
 import DirectContact from '@/components/DirectContact';
 import Link from 'next/link';
 import { getDictionary } from '@/i18n';
-import { getProfile } from '@/lib/content';
+import { getProfile, loadSnapshot } from '@/lib/content';
 import { siteConfig } from '@/config/site';
+import { fixedMetadata } from '@/lib/content/seo';
 
 export function generateStaticParams() {
   return [{ locale: 'vi' }, { locale: 'en' }];
@@ -17,43 +18,8 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isVi = locale === 'vi';
-  const title = isVi
-    ? 'Đàm Thiên Minh — Giới thiệu'
-    : 'Thien Minh Dam — About';
-  const description = isVi
-    ? 'Tìm hiểu về Minh, các dự án web cá nhân, kinh nghiệm triển khai và việc học Java, backend, DevOps.'
-    : 'About Minh: personal web projects, deployment experience, and ongoing Java, backend and DevOps learning.';
-
-  return {
-    metadataBase: new URL(siteConfig.baseUrl),
-    title,
-    description,
-    alternates: {
-      canonical: `${siteConfig.baseUrl}/${locale}/about/`,
-      languages: {
-        vi: `${siteConfig.baseUrl}/vi/about/`,
-        en: `${siteConfig.baseUrl}/en/about/`,
-        'x-default': `${siteConfig.baseUrl}/en/about/`,
-      },
-    },
-    openGraph: {
-      title,
-      description,
-      url: `${siteConfig.baseUrl}/${locale}/about/`,
-      siteName: isVi ? 'Đàm Thiên Minh' : 'Thien Minh Dam',
-      locale: isVi ? 'vi_VN' : 'en_US',
-      type: 'profile',
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-    },
-    robots: siteConfig.isProduction
-      ? { index: true, follow: true }
-      : { index: false, follow: false },
-  };
+  if (locale !== 'vi' && locale !== 'en') throw new Error('Unsupported About locale');
+  return fixedMetadata(await loadSnapshot(), locale, 'about', siteConfig);
 }
 
 export default async function AboutPage({

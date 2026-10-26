@@ -1,59 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { siteConfig } from '@/config/site';
+import { loadSnapshot } from '@/lib/content';
+import { sitemapEntries } from '@/lib/content/seo';
 
 export const dynamic = 'force-static';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
-
-  return [
-    {
-      url: `${siteConfig.baseUrl}/vi/`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 1.0,
-      alternates: {
-        languages: {
-          vi: `${siteConfig.baseUrl}/vi/`,
-          en: `${siteConfig.baseUrl}/en/`,
-        },
-      },
-    },
-    {
-      url: `${siteConfig.baseUrl}/en/`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 1.0,
-      alternates: {
-        languages: {
-          vi: `${siteConfig.baseUrl}/vi/`,
-          en: `${siteConfig.baseUrl}/en/`,
-        },
-      },
-    },
-    {
-      url: `${siteConfig.baseUrl}/vi/about/`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-      alternates: {
-        languages: {
-          vi: `${siteConfig.baseUrl}/vi/about/`,
-          en: `${siteConfig.baseUrl}/en/about/`,
-        },
-      },
-    },
-    {
-      url: `${siteConfig.baseUrl}/en/about/`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-      alternates: {
-        languages: {
-          vi: `${siteConfig.baseUrl}/vi/about/`,
-          en: `${siteConfig.baseUrl}/en/about/`,
-        },
-      },
-    },
-  ];
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  return sitemapEntries(await loadSnapshot(), siteConfig.baseUrl);
 }

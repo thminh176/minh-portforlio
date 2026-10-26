@@ -5,6 +5,8 @@ import Footer from '@/components/Footer';
 import ContactPage from '@/components/ContactPage';
 import { getDictionary } from '@/i18n';
 import { siteConfig } from '@/config/site';
+import { loadSnapshot } from '@/lib/content';
+import { fixedMetadata } from '@/lib/content/seo';
 
 export function generateStaticParams() {
   return [{ locale: 'vi' }, { locale: 'en' }];
@@ -19,43 +21,7 @@ export async function generateMetadata({
   if (locale !== 'vi' && locale !== 'en') {
     notFound();
   }
-  const isVi = locale === 'vi';
-  const title = isVi
-    ? 'Đàm Thiên Minh — Liên hệ'
-    : 'Thien Minh Dam — Contact';
-  const description = isVi
-    ? 'Liên hệ với Đàm Thiên Minh để trao đổi về các dự án website, ý tưởng cộng tác hoặc câu hỏi kỹ thuật.'
-    : 'Get in touch with Thien Minh Dam for website projects, collaboration ideas, or technical questions.';
-
-  return {
-    metadataBase: new URL(siteConfig.baseUrl),
-    title,
-    description,
-    alternates: {
-      canonical: `${siteConfig.baseUrl}/${locale}/contact/`,
-      languages: {
-        vi: `${siteConfig.baseUrl}/vi/contact/`,
-        en: `${siteConfig.baseUrl}/en/contact/`,
-        'x-default': `${siteConfig.baseUrl}/en/contact/`,
-      },
-    },
-    openGraph: {
-      title,
-      description,
-      url: `${siteConfig.baseUrl}/${locale}/contact/`,
-      siteName: isVi ? 'Đàm Thiên Minh' : 'Thien Minh Dam',
-      locale: isVi ? 'vi_VN' : 'en_US',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-    },
-    robots: siteConfig.isProduction
-      ? { index: true, follow: true }
-      : { index: false, follow: false },
-  };
+  return fixedMetadata(await loadSnapshot(), locale, 'contact', siteConfig);
 }
 
 export default async function ContactRoutePage({

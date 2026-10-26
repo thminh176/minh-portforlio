@@ -4,6 +4,7 @@ import SkipLink from '@/components/SkipLink';
 import JsonLd from '@/components/JsonLd';
 import { siteConfig } from '@/config/site';
 import { loadSnapshot } from '@/lib/content';
+import { fixedMetadata } from '@/lib/content/seo';
 
 export function generateStaticParams() {
   return [{ locale: 'vi' }, { locale: 'en' }];
@@ -15,44 +16,8 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const isVi = locale === 'vi';
-  const title = isVi
-    ? 'Đàm Thiên Minh — Web Developer'
-    : 'Thien Minh Dam — Web Developer';
-  const description = isVi
-    ? 'Portfolio của Đàm Thiên Minh: phát triển ứng dụng web, triển khai và vận hành hạ tầng; hướng học tiếp là backend và DevOps.'
-    : 'Thien Minh Dam: Web Developer with hands-on application deployment and infrastructure experience, working toward backend engineering and DevOps.';
-
-  return {
-    metadataBase: new URL(siteConfig.baseUrl),
-    icons: { icon: '/favicon.svg' },
-    title,
-    description,
-    alternates: {
-      canonical: `${siteConfig.baseUrl}/${locale}/`,
-      languages: {
-        vi: `${siteConfig.baseUrl}/vi/`,
-        en: `${siteConfig.baseUrl}/en/`,
-        'x-default': `${siteConfig.baseUrl}/`,
-      },
-    },
-    openGraph: {
-      title,
-      description,
-      url: `${siteConfig.baseUrl}/${locale}/`,
-      siteName: isVi ? 'Đàm Thiên Minh' : 'Thien Minh Dam',
-      locale: isVi ? 'vi_VN' : 'en_US',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary',
-      title,
-      description,
-    },
-    robots: siteConfig.isProduction
-      ? { index: true, follow: true }
-      : { index: false, follow: false },
-  };
+  if (locale !== 'vi' && locale !== 'en') throw new Error('Unsupported layout locale');
+  return fixedMetadata(await loadSnapshot(), locale, 'home', siteConfig);
 }
 
 const themeScript = `
