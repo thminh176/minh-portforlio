@@ -37,7 +37,12 @@ export default function Hero({ locale, profile }: HeroProps) {
 
         {/* Single Semantic H1: Multiline Narrative */}
         <h1 className="font-display text-[32px] leading-[1.18] sm:text-4xl sm:leading-tight md:text-5xl lg:text-[56px] lg:leading-[1.12] font-bold text-[var(--color-ink)] tracking-tight">
-          {profile.hero.headlineLines.map(line => <span className="block" key={line}>{line}</span>)}
+          {profile.hero.headlineLines.map((line, idx) => (
+            <span className="block" key={line}>
+              {line}
+              {idx < profile.hero.headlineLines.length - 1 ? ' ' : ''}
+            </span>
+          ))}
         </h1>
 
         {/* Supporting Editorial Copy */}

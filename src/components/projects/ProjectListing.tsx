@@ -80,6 +80,7 @@ export default function ProjectListing({ locale, projects, settings }: ProjectLi
                     {/* Technologies list */}
                     {record.technologies && record.technologies.length > 0 && (
                       <div
+                        role="group"
                         className="flex flex-wrap items-center gap-2 pt-1"
                         aria-label={isVi ? 'Công nghệ' : 'Technologies'}
                       >
