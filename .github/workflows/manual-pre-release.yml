@@ -53,6 +53,24 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+      - name: Validate published content contract
+        run: pnpm run test:content
+
+      - name: Test content loader and build gate
+        run: pnpm run test:content:loader
+
+      - name: Test content navigation projections
+        run: pnpm run test:content:navigation
+
+      - name: Test snapshot consumers in isolated export
+        run: pnpm run test:content:consumers
+
+      - name: Test static content routes and removals
+        run: pnpm run test:content:routes
+
+      - name: Test SEO and media integrity
+        run: pnpm run test:content:integrity
+
       - name: Build static export
         run: pnpm build
 
@@ -70,6 +88,9 @@ jobs:
 
       - name: Comprehensive browser verification suite
         run: pnpm run test:browser
+
+      - name: Verify published and isolated article navigation
+        run: pnpm run test:browser:navigation
 
       - name: Lighthouse mobile and desktop (local metadata mode; restores preview)
         run: pnpm run test:lighthouse

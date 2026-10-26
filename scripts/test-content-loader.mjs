@@ -7,14 +7,16 @@ import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
 import { createContentAdapter, loadSnapshot, getProfile, getSiteSettings, getPosts, getProjects, getProject, getPost, getFeaturedProjects, getRecentPosts, getTranslationTarget } from '../src/lib/content/index.ts';
-import { ContentValidationError } from '../src/lib/content/validate.ts';
+import { ContentValidationError, validateSnapshot } from '../src/lib/content/validate.ts';
+import { projectArtwork, selectHomeContent } from '../src/lib/content/presentation.ts';
 import { profileConfig } from '../src/config/profile.ts';
 import { siteConfig } from '../src/config/site.ts';
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const productionFile = path.join(repositoryRoot, 'content', 'published', 'dtm.v1.json');
 const originalBytes = await readFile(productionFile);
-const initial = JSON.parse(originalBytes.toString('utf8'));
+const live = await loadSnapshot();
+const initial = validateSnapshot(await readFile(new URL('./fixtures/content/dtm-seed.json', import.meta.url), 'utf8'));
 const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const fixture = JSON.parse(await readFile(new URL('./fixtures/content/valid.json', import.meta.url), 'utf8'));
 const clone = value => structuredClone(value);
@@ -27,54 +29,54 @@ async function reject(run, rule) {
     return true;
   });
 }
-await test('real initial snapshot has only authentic paired projects, empty posts/media and frozen output', async () => {
-  const snapshot = await loadSnapshot();
-  assert.equal(snapshot.posts.length, 0); assert.equal(snapshot.media.length, 0);
-  assert.equal(snapshot.projects.length, 4); assert.ok(Object.isFrozen(snapshot.projects[0].body));
-  assert.deepEqual(new Set(snapshot.projects.map(record => record.sourceUrl)), new Set(['https://github.com/thminh176/mcp-project-assistant', 'https://github.com/thminh176/minh-portforlio']));
-  assert.ok(!JSON.stringify(snapshot).match(/Codex|Antigravity|fixture|mcp-memory/));
+await test('live published data validates and approved seed retains authentic initial facts', async () => {
+  assert.ok(Object.isFrozen(live.profiles));
+  assert.deepEqual((await loadSnapshot()).revision, live.revision);
+  assert.equal(initial.posts.length, 0); assert.equal(initial.media.length, 0);
+  assert.equal(initial.projects.length, 4); assert.ok(Object.isFrozen(initial.projects[0].body));
+  assert.deepEqual(new Set(initial.projects.map(record => record.sourceUrl)), new Set(['https://github.com/thminh176/mcp-project-assistant', 'https://github.com/thminh176/minh-portforlio']));
+  assert.ok(!JSON.stringify(initial).match(/Codex|Antigravity|fixture|mcp-memory/));
 });
-await test('profile and Hero/settings content preserve approved sources exactly', async () => {
-  const hero = (await readFile(new URL('../src/components/Hero.tsx', import.meta.url), 'utf8')).replaceAll('&apos;', "'");
-  const journal = await readFile(new URL('../src/components/JournalIntro.tsx', import.meta.url), 'utf8');
+await test('approved seed profile and settings project through typed Home props', async () => {
   for (const language of ['vi', 'en']) {
-    const profile = await getProfile(language);
+    const { profile, settings, featuredProjects, recentPosts } = selectHomeContent(initial, language);
     for (const [key,value] of Object.entries(profileConfig[language])) assert.deepEqual(profile[key],value);
-    profile.hero.headlineLines.forEach(line => assert.ok(hero.includes(`>${line}</span>`)));
-    assert.ok(hero.includes(profile.hero.kicker)); assert.ok(hero.includes(profile.hero.supporting));
-    const settings = await getSiteSettings(language);
     assert.equal(settings.siteTitle, siteConfig.author[language]);
-    assert.ok(journal.includes(settings.journalTitle)); assert.ok(journal.includes(settings.journalEmptyText));
+    assert.deepEqual(featuredProjects.map(project => project.id), settings.featuredProjectIds);
+    assert.deepEqual(recentPosts, []);
+    assert.ok(profile.hero.kicker && profile.hero.headlineLines.length && profile.hero.supporting);
+    assert.ok(settings.journalTitle && settings.journalEmptyText);
     assert.ok(!('baseUrl' in settings)); assert.ok(!('isProduction' in settings));
   }
 });
-await test('initial project facts and technologies match the existing approved components', async () => {
-  const sources = {
-    'mcp-project-assistant': await readFile(new URL('../src/components/FeaturedMcpProject.tsx', import.meta.url),'utf8'),
-    'personal-portfolio': await readFile(new URL('../src/components/FeaturedPortfolioProject.tsx', import.meta.url),'utf8'),
-  };
+await test('approved seed project facts retain verified source-specific artwork', async () => {
   for (const project of initial.projects) {
-    const source=sources[project.translationGroup];
-    assert.ok(source.includes(project.title)); assert.ok(source.includes(project.summary)); assert.ok(source.includes(project.sourceUrl));
-    project.technologies.forEach(technology=>assert.ok(source.includes(`<span>${technology}</span>`)));
+    assert.equal(projectArtwork(project), project.translationGroup === 'mcp-project-assistant' ? 'mcp' : 'portfolio');
+    assert.ok(project.title && project.summary && project.sourceUrl && project.technologies.length);
     assert.equal(project.body[0].children[0].text,project.summary);
   }
 });
-await test('exact locale isolation, published lookup, paired translations and empty recent/featured selection', async () => {
+await test('live selectors preserve locale, order, published lookups and translation truth', async () => {
   for (const language of ['vi','en']) {
-    assert.deepEqual(await getPosts(language),[]); assert.deepEqual(await getRecentPosts(language),[]);
-    const projects=await getProjects(language); assert.equal(projects.length,2); assert.ok(projects.every(record=>record.locale===language));
-    assert.deepEqual((await getFeaturedProjects(language)).map(record=>record.id),projects.map(record=>record.id));
+    const posts = live.posts.filter(record => record.locale === language);
+    const projects = live.projects.filter(record => record.locale === language);
+    const settings = live.settings.find(record => record.locale === language);
+    assert.deepEqual(await getPosts(language), posts);
+    assert.deepEqual(await getRecentPosts(language), posts.slice(0, settings.recentPostLimit));
+    assert.deepEqual(await getProjects(language), projects);
+    assert.deepEqual((await getFeaturedProjects(language)).map(record => record.id), settings.featuredProjectIds);
+    assert.deepEqual(await getProfile(language), live.profiles.find(record => record.locale === language));
+    assert.deepEqual(await getSiteSettings(language), settings);
     for (const project of projects) {
       assert.equal((await getProject(language,project.slug)).id,project.id);
       const target=await getTranslationTarget('projects',language,project.slug,language==='vi'?'en':'vi');
-      assert.equal(target.locale,language==='vi'?'en':'vi'); assert.equal(target.translationGroup,project.translationGroup);
+      assert.equal(target?.id ?? null, project.translations[0]?.recordId ?? null);
     }
+    for (const post of posts) assert.equal((await getPost(language, post.slug)).id, post.id);
   }
   assert.equal(await getPost('vi','missing'),null); assert.equal(await getProject('vi','../bad'),null);
-  assert.equal(await getProject('en','portfolio-ca-nhan'),null);
   assert.equal(await getTranslationTarget('posts','vi','missing','en'),null);
-  assert.equal(await getTranslationTarget('projects','vi','mcp-project-assistant','vi'),null);
+  assert.equal(await getTranslationTarget('projects','vi','missing','vi'),null);
   await reject(()=>getProfile('vn'),'selector.locale');
   await reject(()=>getTranslationTarget('unknown','vi','missing','en'),'selector.collection');
 });
@@ -111,6 +113,18 @@ try {
     assert.equal((await adapter.getPost('vi','post-c-vi')).locale,'vi'); assert.equal(await adapter.getPost('en','post-c-vi'),null);
     assert.equal(await adapter.getTranslationTarget('posts','vi','post-c-vi','en'),null);
     candidate.settings[0].recentPostLimit=0; await save(candidate); assert.deepEqual(await adapter.getRecentPosts('vi'),[]);
+  });
+  await test('legitimate complete replacement can publish a post and remove every seed project',async()=>{
+    const candidate=clone(initial);
+    candidate.projects=[];
+    candidate.settings.forEach(settings=>{ settings.featuredProjectIds=[]; });
+    candidate.posts=[clone(fixture.posts[0])];
+    await save(candidate);
+    assert.deepEqual(await adapter.getProjects('vi'),[]);
+    assert.deepEqual(await adapter.getFeaturedProjects('en'),[]);
+    assert.equal((await adapter.getPosts('vi'))[0].id,candidate.posts[0].id);
+    assert.equal((await adapter.getRecentPosts('vi'))[0].id,candidate.posts[0].id);
+    assert.equal((await adapter.getProfile('vi')).name,candidate.profiles[0].name);
   });
   await test('missing translation remains absent after repaired complete replacement',async()=>{
     const candidate=clone(initial); const removed='project-mcp-en';
@@ -161,7 +175,7 @@ try {
   await test('exact validate:content and build gate reject staged draft before Next command',async()=>{
     assert.equal(manifest.scripts.build,`${manifest.scripts['validate:content']} && next build && node scripts/normalize-static-export.mjs`);
     const stage=path.join(temp,'gate');
-    for(const relative of ['src/lib/content/index.ts','src/lib/content/types.ts','src/lib/content/validate.ts','content/schema/published-snapshot.v1.schema.json','scripts/validate-content.mjs','package.json']){
+    for(const relative of ['src/lib/content/index.ts','src/lib/content/types.ts','src/lib/content/validate.ts','src/lib/content/routes.ts','content/schema/published-snapshot.v1.schema.json','scripts/validate-content.mjs','package.json']){
       const destination=path.join(stage,relative); await mkdir(path.dirname(destination),{recursive:true}); await copyFile(path.join(repositoryRoot,relative),destination);
     }
     await mkdir(path.join(stage,'public')); await mkdir(path.join(stage,'content','published'),{recursive:true});

@@ -51,6 +51,15 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+      - name: Validate published content contract
+        run: pnpm run test:content
+
+      - name: Test content loader and build gate
+        run: pnpm run test:content:loader
+
+      - name: Test content navigation projections
+        run: pnpm run test:content:navigation
+
       - name: Build static export
         run: pnpm build
 

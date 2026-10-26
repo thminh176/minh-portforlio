@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadSnapshot } from '../src/lib/content/index.ts';
 import { publishedPaths } from '../src/lib/content/routes.ts';
+import { selectHomeContent } from '../src/lib/content/presentation.ts';
 
 const outDir = path.resolve('out');
 
@@ -11,6 +12,7 @@ if (!fs.existsSync(outDir)) {
   console.error('[smoke:export] FAIL: out directory does not exist.');
   process.exit(1);
 }
+const snapshot = await loadSnapshot();
 
 const requiredFiles = [
   'index.html',
@@ -63,7 +65,7 @@ if (!viHtml.includes('<html lang="vi"')) {
   console.error('[smoke:export] FAIL: vi/index.html missing native static <html lang="vi"> attribute.');
   process.exit(1);
 }
-if (!viHtml.includes('Đàm Thiên Minh')) {
+if (!renderedExportText(viHtml).includes(normalizedText(snapshot.profiles.find(record => record.locale === 'vi').name))) {
   console.error('[smoke:export] FAIL: vi/index.html missing Vietnamese name.');
   process.exit(1);
 }
@@ -111,7 +113,7 @@ if (!enHtml.includes('<html lang="en"')) {
   console.error('[smoke:export] FAIL: en/index.html missing native static <html lang="en"> attribute.');
   process.exit(1);
 }
-if (!enHtml.includes('Thien Minh Dam')) {
+if (!renderedExportText(enHtml).includes(normalizedText(snapshot.profiles.find(record => record.locale === 'en').name))) {
   console.error('[smoke:export] FAIL: en/index.html missing English name.');
   process.exit(1);
 }
@@ -159,8 +161,8 @@ if (!viAboutHtml.includes('<html lang="vi"')) {
   console.error('[smoke:export] FAIL: vi/about/index.html missing native static <html lang="vi"> attribute.');
   process.exit(1);
 }
-if (!viAboutHtml.includes('Giới thiệu về Đàm Thiên Minh')) {
-  console.error('[smoke:export] FAIL: vi/about/index.html missing Vietnamese about title.');
+if (!viAboutHtml.includes('<h1') || !renderedExportText(viAboutHtml).includes(normalizedText(snapshot.profiles.find(record => record.locale === 'vi').name))) {
+  console.error('[smoke:export] FAIL: vi/about/index.html missing About heading or published identity.');
   process.exit(1);
 }
 if (!viAboutHtml.includes('rel="canonical"') || !viAboutHtml.includes('href="https://damthienminh.id.vn/vi/about/"')) {
@@ -178,8 +180,8 @@ if (!enAboutHtml.includes('<html lang="en"')) {
   console.error('[smoke:export] FAIL: en/about/index.html missing native static <html lang="en"> attribute.');
   process.exit(1);
 }
-if (!enAboutHtml.includes('About Thien Minh Dam')) {
-  console.error('[smoke:export] FAIL: en/about/index.html missing English about title.');
+if (!enAboutHtml.includes('<h1') || !renderedExportText(enAboutHtml).includes(normalizedText(snapshot.profiles.find(record => record.locale === 'en').name))) {
+  console.error('[smoke:export] FAIL: en/about/index.html missing About heading or published identity.');
   process.exit(1);
 }
 if (!enAboutHtml.includes('rel="canonical"') || !enAboutHtml.includes('href="https://damthienminh.id.vn/en/about/"')) {
@@ -192,7 +194,7 @@ if (!enAboutHtml.includes('href="mailto:thminh.176.vn@gmail.com"') || !enAboutHt
 }
 
 
-// 6. Reciprocal hreflang checks on all 4 published routes
+// 6. Reciprocal hreflang checks on the original Home and About routes
 const localizedPages = [
   { name: 'vi/index.html', html: viHtml, viHref: 'https://damthienminh.id.vn/vi/', enHref: 'https://damthienminh.id.vn/en/' },
   { name: 'en/index.html', html: enHtml, viHref: 'https://damthienminh.id.vn/vi/', enHref: 'https://damthienminh.id.vn/en/' },
@@ -243,7 +245,6 @@ if (!isProduction) {
 
 // 9. Sitemap.xml must match the complete validated publication and physical export.
 const sitemapXml = fs.readFileSync(path.join(outDir, 'sitemap.xml'), 'utf8');
-const snapshot = await loadSnapshot();
 const expectedSitemapUrls = publishedPaths(snapshot).map(route => `https://damthienminh.id.vn${route}`);
 const actualSitemapUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
 if (JSON.stringify(actualSitemapUrls) !== JSON.stringify(expectedSitemapUrls)) {
@@ -276,7 +277,12 @@ for (const { name, html } of [localizedPages[0], localizedPages[1]]) {
 }
 
 // 11. Zero tracking beacons or analytics scripts
-const allHtmlFiles = [rootHtml, viHtml, enHtml, viAboutHtml, enAboutHtml];
+const localizedRoutes = publishedPaths(snapshot).filter(route => route !== '/');
+const localizedExports = localizedRoutes.map(route => ({
+  route,
+  html: fs.readFileSync(path.join(outDir, ...route.split('/').filter(Boolean), 'index.html'), 'utf8'),
+}));
+const allHtmlFiles = [rootHtml, ...localizedExports.map(item => item.html)];
 const trackingIndicators = ['googletagmanager', 'google-analytics', 'static.cloudflareinsights.com', 'beacon.min.js'];
 for (const html of allHtmlFiles) {
   for (const indicator of trackingIndicators) {
@@ -311,28 +317,44 @@ for (const html of allHtmlFiles) {
 // Read actual HTML text, excluding scripts so serialized React data cannot satisfy it.
 function renderedExportText(html) {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]+>/g, ' ').replace(/&(?:#x27|#39|apos);/g, "'")
-    .replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&(#(?:x[\da-f]+|\d+)|amp|lt|gt|quot|apos|nbsp);/gi, (entity, code) => {
+      const named = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+      if (!code.startsWith('#')) return named[code.toLowerCase()];
+      const value = code[1].toLowerCase() === 'x' ? Number.parseInt(code.slice(2), 16) : Number.parseInt(code.slice(1), 10);
+      return value <= 0x10ffff ? String.fromCodePoint(value) : entity;
+    }).replace(/\s+/g, ' ').trim();
 }
-for (const [name, html, heading, portfolio] of [
-  ['vi/index.html', viHtml, 'Mình làm web. Đây là những gì mình đang xây.', 'Portfolio cá nhân'],
-  ['en/index.html', enHtml, "I build for the web. Here's what I'm working on.", 'Personal portfolio'],
+function normalizedText(value) { return value.replace(/\s+/g, ' ').trim(); }
+for (const [locale, name, html] of [
+  ['vi', 'vi/index.html', viHtml],
+  ['en', 'en/index.html', enHtml],
 ]) {
+  const { profile, featuredProjects, recentPosts, settings } = selectHomeContent(snapshot, locale);
   const headings = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)];
-  if (headings.length !== 1 || renderedExportText(headings[0][1]) !== heading) {
+  if (headings.length !== 1 || renderedExportText(headings[0][1]) !== normalizedText(profile.hero.headlineLines.join(' '))) {
     console.error(`[smoke:export] FAIL: ${name} must contain one coherent V2 narrative H1.`);
     process.exit(1);
   }
   const work = html.match(/<section\b[^>]*id="work"[^>]*>([\s\S]*?)<\/section>/)?.[1] || '';
-  for (const term of ['MCP Project Assistant', portfolio, 'TypeScript', 'Next.js', 'Cloudflare Pages']) {
-    if (!renderedExportText(work).includes(term)) {
-      console.error(`[smoke:export] FAIL: ${name} missing verified work content "${term}".`);
+  for (const project of featuredProjects) {
+    if (!renderedExportText(work).includes(normalizedText(project.title)) || !renderedExportText(work).includes(normalizedText(project.summary))) {
+      console.error(`[smoke:export] FAIL: ${name} missing published project ${project.id}.`);
+      process.exit(1);
+    }
+    if (!work.includes(`href="${project.sourceUrl}"`) || !work.includes(`href="/${locale}/projects/${project.slug}/"`)) {
+      console.error(`[smoke:export] FAIL: ${name} missing published project links for ${project.id}.`);
       process.exit(1);
     }
   }
-  for (const repository of ['mcp-project-assistant', 'minh-portforlio']) {
-    if (!work.includes(`href="https://github.com/thminh176/${repository}"`)) {
-      console.error(`[smoke:export] FAIL: ${name} missing verified source URL for ${repository}.`);
+  const journal = html.match(/<section\b[^>]*id="journal"[^>]*>([\s\S]*?)<\/section>/)?.[1] || '';
+  if (recentPosts.length === 0 && !renderedExportText(journal).includes(normalizedText(settings.journalEmptyText))) {
+    console.error(`[smoke:export] FAIL: ${name} missing honest published journal empty state.`);
+    process.exit(1);
+  }
+  for (const post of recentPosts) {
+    if (!journal.includes(`href="/${locale}/blog/${post.slug}/"`) || !renderedExportText(journal).includes(normalizedText(post.title)) || !renderedExportText(journal).includes(normalizedText(post.excerpt))) {
+      console.error(`[smoke:export] FAIL: ${name} missing published recent post ${post.id}.`);
       process.exit(1);
     }
   }
@@ -369,8 +391,8 @@ for (const { name, html } of localizedPages) {
   }
 }
 for (const [name, html, requiredTerms] of [
-  ['vi/about/index.html', viAboutHtml, ['Những công nghệ mình đã làm việc cùng', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']],
-  ['en/about/index.html', enAboutHtml, ['Technologies I have worked with', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8']],
+  ['vi/about/index.html', viAboutHtml, ['Những công nghệ mình đã làm việc cùng', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']],
+  ['en/about/index.html', enAboutHtml, ['Technologies I have worked with', 'Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8']],
 ]) {
   for (const term of requiredTerms) {
     if (!html.includes(term)) {
@@ -397,6 +419,35 @@ function resolveUrlToHtmlFile(url) {
 }
 
 const urlsToValidate = new Set();
+
+for (const { route, html } of localizedExports) {
+  const canonical = `https://damthienminh.id.vn${route}`;
+  const canonicals = [...html.matchAll(/<link rel="canonical" href="([^"]+)"/g)].map(match => match[1]);
+  if (canonicals.length !== 1 || canonicals[0] !== canonical) {
+    console.error(`[smoke:export] FAIL: ${route} has missing or unexpected canonical URL.`);
+    process.exit(1);
+  }
+  const detail = [
+    ...snapshot.posts.map(record => ({ record, prefix: 'blog', collection: snapshot.posts })),
+    ...snapshot.projects.map(record => ({ record, prefix: 'projects', collection: snapshot.projects })),
+  ].find(({ record, prefix }) => route === `/${record.locale}/${prefix}/${record.slug}/`);
+  const languagePaths = detail
+    ? Object.fromEntries([detail.record, ...detail.record.translations.map(reference => detail.collection.find(record => record.id === reference.recordId))]
+      .map(record => [record.locale, `https://damthienminh.id.vn/${record.locale}/${detail.prefix}/${record.slug}/`]))
+    : (() => {
+      const page = route.split('/').filter(Boolean)[1];
+      const suffix = page ? `${page}/` : '';
+      return { vi: `https://damthienminh.id.vn/vi/${suffix}`, en: `https://damthienminh.id.vn/en/${suffix}` };
+    })();
+  languagePaths['x-default'] = detail ? (languagePaths.en ?? languagePaths.vi) : route === '/vi/' || route === '/en/' ? 'https://damthienminh.id.vn/' : languagePaths.en;
+  const actual = [...html.matchAll(/<link rel="alternate" (?:hrefLang|hreflang)="([^"]+)" href="([^"]+)"/g)]
+    .map(match => [match[1], match[2]]).sort((a, b) => a[0].localeCompare(b[0]));
+  const expected = Object.entries(languagePaths).sort((a, b) => a[0].localeCompare(b[0]));
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    console.error(`[smoke:export] FAIL: ${route} has missing or phantom hreflang URLs.`);
+    process.exit(1);
+  }
+}
 
 // Extract from sitemap.xml loc tags
 const locMatchesAll = sitemapXml.match(/<loc>(.*?)<\/loc>/g) || [];
@@ -458,4 +509,4 @@ try {
   process.exit(1);
 }
 
-console.log('[smoke:export] PASS: All 4 localized routes, root redirect, robots.txt, sitemap.xml, and _routes.json validated successfully with zero unverified placeholders or tracking scripts.');
+console.log(`[smoke:export] PASS: All ${localizedRoutes.length} localized routes, root redirect, robots.txt, sitemap.xml, and _routes.json validated successfully with zero unverified placeholders or tracking scripts.`);

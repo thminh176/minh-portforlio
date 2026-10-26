@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 import { AxeBuilder } from '@axe-core/playwright';
+import { loadSnapshot } from '../src/lib/content/index.ts';
+import { selectHomeContent } from '../src/lib/content/presentation.ts';
 import {
   locateBrowserExecutable,
   createStrictStaticServer,
@@ -22,6 +24,7 @@ if (!fs.existsSync(outDir)) {
   console.error('[verify-browser] Error: out/ directory does not exist. Run pnpm build first.');
   process.exit(1);
 }
+const publishedSnapshot = await loadSnapshot();
 
 if (!fs.existsSync(evidenceDir)) {
   fs.mkdirSync(evidenceDir, { recursive: true });
@@ -1095,23 +1098,23 @@ async function runBrowserVerification() {
       {
         path: '/vi/',
         name: 'home-vi',
-        expectedIdentity: 'Đàm Thiên Minh',
-        expectedServices: 'MCP Project Assistant',
-        expectedProcess: 'Portfolio cá nhân',
+        expectedIdentity: publishedSnapshot.profiles.find(record => record.locale === 'vi').name,
+        expectedServices: null,
+        expectedProcess: null,
         expectedCta: 'Trao đổi với mình',
       },
       {
         path: '/en/',
         name: 'home-en',
-        expectedIdentity: 'Thien Minh Dam',
-        expectedServices: 'MCP Project Assistant',
-        expectedProcess: 'Personal portfolio',
+        expectedIdentity: publishedSnapshot.profiles.find(record => record.locale === 'en').name,
+        expectedServices: null,
+        expectedProcess: null,
         expectedCta: 'Get in touch',
       },
       {
         path: '/vi/about/',
         name: 'about-vi',
-        expectedIdentity: 'Đàm Thiên Minh',
+        expectedIdentity: publishedSnapshot.profiles.find(record => record.locale === 'vi').name,
         expectedServices: 'Những công nghệ mình đã làm việc cùng',
         expectedProcess: 'Mình đang học thêm',
         expectedCta: 'Bạn cần trao đổi về website?',
@@ -1119,7 +1122,7 @@ async function runBrowserVerification() {
       {
         path: '/en/about/',
         name: 'about-en',
-        expectedIdentity: 'Thien Minh Dam',
+        expectedIdentity: publishedSnapshot.profiles.find(record => record.locale === 'en').name,
         expectedServices: 'Technologies I have worked with',
         expectedProcess: 'Currently learning',
         expectedCta: 'Need a website?',
@@ -1172,20 +1175,25 @@ async function runBrowserVerification() {
       }
 
       if (!item.path.includes('/about/')) {
-        const expectedH1 = item.path.startsWith('/vi/') ? 'Mình làm web. Đây là những gì mình đang xây.' : "I build for the web. Here's what I'm working on.";
+        const locale = item.path.startsWith('/vi/') ? 'vi' : 'en';
+        const { profile, featuredProjects, recentPosts, settings } = selectHomeContent(publishedSnapshot, locale);
+        const expectedH1 = profile.hero.headlineLines.join(' ');
         if (await page14.locator('h1').count() !== 1 || (await page14.locator('h1').textContent()).replace(/\s+/g, ' ').trim() !== expectedH1) {
           throw new Error(`Rendered V2 H1 mismatch on ${item.path}`);
         }
-        for (const repository of ['mcp-project-assistant', 'minh-portforlio']) {
-          const source = page14.locator(`#work article a[href="https://github.com/thminh176/${repository}"]`);
-          if (await source.count() !== 1 || !await source.isVisible()) throw new Error(`Verified source missing on ${item.path}: ${repository}`);
+        for (const project of featuredProjects) {
+          const source = page14.locator(`#work article a[href="${project.sourceUrl}"]`);
+          if (await source.count() !== 1 || !await source.isVisible()) throw new Error(`Published source missing on ${item.path}: ${project.id}`);
+          if (!renderedText.includes(project.title) || !renderedText.includes(project.summary)) throw new Error(`Published project copy missing on ${item.path}: ${project.id}`);
         }
+        if (!recentPosts.length && !renderedText.includes(settings.journalEmptyText)) throw new Error(`Published journal empty state missing on ${item.path}`);
+        for (const post of recentPosts) if (!renderedText.includes(post.title) || !renderedText.includes(post.excerpt)) throw new Error(`Published recent post copy missing on ${item.path}: ${post.id}`);
       }
 
       if (item.path.includes('/about/')) {
         const requiredAboutTerms = item.path.startsWith('/vi/')
-          ? ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']
-          : ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'MCP Project Assistant', 'mcp-project-assistant', 'minh-portforlio', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8'];
+          ? ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Java ở mức nền tảng', 'Spring Boot là hướng tìm hiểu tiếp theo', 'F8']
+          : ['Next.js', 'Ubuntu Server', 'Docker', 'PostgreSQL', 'Cloudflare', 'Java fundamentals', 'Spring Boot is a future learning focus', 'F8'];
         for (const term of requiredAboutTerms) {
           if (!renderedText.includes(term)) {
             throw new Error(`Rendered text violation on ${item.path}: missing approved portfolio content "${term}"!`);
@@ -1196,10 +1204,10 @@ async function runBrowserVerification() {
       if (!renderedText.includes(item.expectedIdentity)) {
         throw new Error(`Rendered text violation on ${item.path}: missing identity "${item.expectedIdentity}"!`);
       }
-      if (!renderedText.includes(item.expectedServices)) {
+      if (item.expectedServices && !renderedText.includes(item.expectedServices)) {
         throw new Error(`Rendered text violation on ${item.path}: missing services "${item.expectedServices}"!`);
       }
-      if (!renderedText.includes(item.expectedProcess)) {
+      if (item.expectedProcess && !renderedText.includes(item.expectedProcess)) {
         throw new Error(`Rendered text violation on ${item.path}: missing process/approach "${item.expectedProcess}"!`);
       }
       if (!renderedText.includes(item.expectedCta)) {

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const snapshotPath = 'content/published/dtm.v1.json';
 const original = await readFile(path.join(repository, snapshotPath));
-const initial = JSON.parse(original);
+const initial = JSON.parse(await readFile(new URL('./fixtures/content/dtm-seed.json', import.meta.url), 'utf8'));
 const manifest = JSON.parse(await readFile(path.join(repository, 'package.json'), 'utf8'));
 const temp = await mkdtemp(path.join(os.tmpdir(), 'dtm-routes-'));
 const stage = path.join(temp, 'checkout');
@@ -89,7 +89,7 @@ async function build(label, snapshot, expectedExit = 0, expectedRule) {
     assert.ok(!files.some(file => file.startsWith('vn/')));
     for (const locale of ['vi', 'en']) {
       const html = await readFile(path.join(stage, 'out', locale, 'blog', 'index.html'), 'utf8');
-      const settings = initial.settings.find(record => record.locale === locale);
+      const settings = data.settings.find(record => record.locale === locale);
       assert.ok(html.includes(escape(settings.journalTitle)));
       const localPosts = posts.filter(post => post.locale === locale);
       assert.equal(html.includes('data-blog-empty'), localPosts.length === 0);
@@ -168,7 +168,7 @@ function post(id, locale, slug, group) {
   };
 }
 try {
-  assert.equal(initial.posts.length, 0, 'this harness expects the accepted real zero-post snapshot');
+  assert.equal(initial.posts.length, 0, 'approved fixture seed must start with zero posts');
   await mkdir(stage);
   // Copy only committed build inputs plus this task's source files; exclude secrets, reports and caches.
   for (const relative of ['src', 'content', 'public', 'scripts', 'package.json', 'pnpm-lock.yaml', 'next.config.ts', 'next-env.d.ts', 'tsconfig.json', 'postcss.config.mjs']) {
@@ -177,7 +177,7 @@ try {
   // A single external junction is rejected by Turbopack's filesystem boundary. Keep
   // dependency links inside an isolated tree without installing or changing packages.
   await stageDependencies(await realpath(path.join(repository, 'node_modules')), path.join(stage, 'node_modules'));
-  await build('empty', original);
+  await build('empty', initial);
   const candidate = structuredClone(initial);
   const vi = post('route-pair-vi', 'vi', 'ghi-chep-thu-nghiem', 'route-pair');
   const en = post('route-pair-en', 'en', 'translated-route-note', 'route-pair');
@@ -237,7 +237,7 @@ try {
   await build('project-draft-rejected', projectDraft, 1, 'schema.const');
   const invalid = structuredClone(candidate); invalid.posts[0].related = [{ collection: 'posts', recordId: 'missing-published-post' }];
   await build('reference-rejected', invalid, 1, 'reference.publishedLocale');
-  await build('final-empty', original);
+  await build('final-empty', initial);
   console.log('Content routes: blog assertions preserved; genuine projects, translated slugs, escaped blocks, cross-collection links, partial/all removal and fail-closed gates passed.');
 } finally {
   assert.deepEqual(await readFile(path.join(repository, snapshotPath)), original, 'real snapshot bytes unchanged');

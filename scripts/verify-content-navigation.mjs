@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import { AxeBuilder } from '@axe-core/playwright';
+import { loadSnapshot } from '../src/lib/content/index.ts';
 import { locateBrowserExecutable, createStrictStaticServer, closeBrowserContextsBounded, closeBrowserBounded } from './verification-helpers.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
@@ -13,11 +14,12 @@ const evidenceDir = path.resolve(process.env.DTM_NAVIGATION_LOG_DIR || 'reports/
 await mkdir(evidenceDir, { recursive: true });
 const snapshotFile = path.join(repository, 'content/published/dtm.v1.json');
 const original = await readFile(snapshotFile);
-const initial = JSON.parse(original);
+const initial = JSON.parse(await readFile(new URL('./fixtures/content/dtm-seed.json', import.meta.url), 'utf8'));
+const live = await loadSnapshot();
 const manifest = JSON.parse(await readFile(path.join(repository, 'package.json'), 'utf8'));
 const css = await readFile(path.join(repository, 'src/app/globals.css'), 'utf8');
 const fonts = new Set([...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map(match => match[1]));
-const evidence = { commands: [], rows: [], unexpectedRequests: [], runtimeErrors: [] };
+const evidence = { commands: [], rows: [], fullPageAxe: [], unexpectedRequests: [], runtimeErrors: [] };
 const browserInfo = locateBrowserExecutable();
 assert.ok(browserInfo, 'A local Edge/Chrome executable is required');
 let browser;
@@ -65,6 +67,11 @@ async function verify(rootDir, routes, label) {
         const axe = await new AxeBuilder({ page }).include('header').analyze();
         assert.deepEqual(axe.violations, [], `Header axe: ${label} ${source} ${width}`);
         assert.deepEqual(axe.incomplete, [], `Header axe incomplete: ${label} ${source} ${width}`);
+        const full = await new AxeBuilder({ page }).analyze();
+        evidence.fullPageAxe.push({ label, source, width, violations: full.violations.map(item => ({ id: item.id, impact: item.impact, nodes: item.nodes.map(node => ({ target: node.target, failureSummary: node.failureSummary })) })),
+          incomplete: full.incomplete.map(item => ({ id: item.id, impact: item.impact, nodes: item.nodes.map(node => ({ target: node.target, html: node.html, failureSummary: node.failureSummary,
+            any: node.any, all: node.all, none: node.none })) })) });
+        assert.deepEqual(full.violations, [], `Full-page axe: ${label} ${source} ${width}`);
         const imageName = `${label}-${source.replaceAll('/', '_')}-${width}.png`;
         await page.screenshot({ path: path.join(evidenceDir, imageName), fullPage: false });
         if (width === 390) {
@@ -136,9 +143,9 @@ try {
       routes.push({ source: `/${locale}/${suffix}`, target: `/${other}/${suffix}`, section });
     }
   }
-  for (const record of initial.projects) {
-    const target = initial.projects.find(item => item.id === record.translations[0]?.recordId);
-    routes.push({ source: `/${record.locale}/projects/${record.slug}/`, target: target ? `/${target.locale}/projects/${target.slug}/` : `/${record.locale === 'vi' ? 'en' : 'vi'}/projects/`, section: 'projects' });
+  for (const [collection, prefix] of [['projects', 'projects'], ['posts', 'blog']]) for (const record of live[collection]) {
+    const target = live[collection].find(item => item.id === record.translations[0]?.recordId);
+    routes.push({ source: `/${record.locale}/${prefix}/${record.slug}/`, target: target ? `/${target.locale}/${prefix}/${target.slug}/` : `/${record.locale === 'vi' ? 'en' : 'vi'}/${prefix}/`, section: prefix });
   }
   await verify(path.join(repository, 'out'), routes, 'published');
   temp = await mkdtemp(path.join(os.tmpdir(), 'dtm-nav-export-'));

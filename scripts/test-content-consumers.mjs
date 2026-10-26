@@ -12,7 +12,7 @@ import { validateSnapshot, ContentValidationError } from '../src/lib/content/val
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const snapshotPath = 'content/published/dtm.v1.json';
 const original = await readFile(path.join(repository, snapshotPath));
-const initial = JSON.parse(original);
+const initial = JSON.parse(await readFile(new URL('./fixtures/content/dtm-seed.json', import.meta.url), 'utf8'));
 const manifest = JSON.parse(await readFile(path.join(repository, 'package.json'), 'utf8'));
 const clone = () => structuredClone(initial);
 const temp = await mkdtemp(path.join(os.tmpdir(), 'dtm-consumers-'));
@@ -53,7 +53,7 @@ function escaped(value) {
 }
 try {
   const candidate = clone();
-  candidate.profiles[0].name = 'Published Fixture Person';
+  candidate.profiles[0].name = 'Published Fixture & <Person>';
   candidate.profiles[0].role = 'Fixture role';
   candidate.profiles[0].bioSummary = 'Published fixture biography </script><script>breakout()</script>';
   candidate.profiles[0].aboutStory[0] = 'Published fixture story';

@@ -14,7 +14,7 @@ import { FIXED_ROUTES, publishedPaths } from '../src/lib/content/routes.ts';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const relativeSnapshot = 'content/published/dtm.v1.json';
 const original = await readFile(path.join(repo, relativeSnapshot));
-const initial = JSON.parse(original);
+const initial = JSON.parse(await readFile(new URL('./fixtures/content/dtm-seed.json', import.meta.url), 'utf8'));
 const manifest = JSON.parse(await readFile(path.join(repo, 'package.json'), 'utf8'));
 const clone = value => structuredClone(value);
 const baseUrl = 'https://damthienminh.id.vn';

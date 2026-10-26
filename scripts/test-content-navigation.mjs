@@ -8,9 +8,19 @@ import { createHeaderNavigation, resolveHeaderNavigation } from '../src/lib/cont
 
 let count = 0;
 async function test(name, run) { await run(); console.log(`ok ${++count} - ${name}`); }
-const initial = await loadSnapshot();
+const initial = validateSnapshot(await readFile(new URL('./fixtures/content/dtm-seed.json', import.meta.url), 'utf8'));
+const live = await loadSnapshot();
 const select = (data, locale, pathname, fallback) => resolveHeaderNavigation(pathname, locale, createHeaderNavigation(data, locale).translations, fallback);
 const validated = data => validateSnapshot(JSON.stringify(data));
+await test('live publication maps only its own published detail translations', () => {
+  for (const collection of ['posts', 'projects']) for (const record of live[collection]) {
+    const prefix = collection === 'posts' ? 'blog' : 'projects';
+    const other = record.locale === 'vi' ? 'en' : 'vi';
+    const target = record.translations[0] && live[collection].find(item => item.id === record.translations[0].recordId);
+    assert.equal(select(live, record.locale, `/${record.locale}/${prefix}/${record.slug}/`).targetOtherPath,
+      target ? `/${target.locale}/${prefix}/${target.slug}/` : `/${other}/${prefix}/`);
+  }
+});
 function post(id, locale, slug, translationGroup = id) {
   return { id, locale, slug, translationGroup, status: 'published', translations: [],
     publishedAt: initial.exportedAt, updatedAt: initial.exportedAt,
