@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BlogListing from '@/components/blog/BlogListing';
+import ArticleView from '@/components/blog/ArticleView';
 import { getPosts, loadSnapshot } from '@/lib/content';
-import type { Block, ImageUse, Inline, LinkTarget, Locale, Snapshot } from '@/lib/content/types';
+import type { Locale } from '@/lib/content/types';
 import { siteConfig } from '@/config/site';
 
 // Optional catch-all exports the real listings even when no published article exists.
@@ -50,57 +49,15 @@ export async function generateMetadata({ params }: { params: RouteParams }): Pro
   };
 }
 
-function href(target: LinkTarget, snapshot: Snapshot): string | null {
-  if (target.kind === 'external') return target.url;
-  if (target.kind === 'internal') return target.path;
-  const record = snapshot[target.collection].find(item => item.id === target.recordId);
-  return record ? `/${record.locale}/${target.collection === 'posts' ? 'blog' : 'projects'}/${record.slug}/` : null;
-}
-function inlines(items: readonly Inline[], snapshot: Snapshot) {
-  return items.map((item, i) => {
-    if (item.type === 'text') return <span key={i}>{item.text}</span>;
-    const target = href(item.target, snapshot);
-    return target ? <a key={i} href={target} rel={item.target.kind === 'external' ? 'noopener noreferrer' : undefined}>{item.label}</a> : <span key={i}>{item.label}</span>;
-  });
-}
-function image(use: ImageUse, snapshot: Snapshot) {
-  const media = snapshot.media.find(asset => asset.id === use.mediaId);
-  if (!media) notFound(); // Validator has already required every referenced asset.
-  return <figure><Image src={media.path} alt={use.alt} width={media.width} height={media.height} />{'caption' in use && use.caption ? <figcaption>{use.caption}</figcaption> : null}</figure>;
-}
-function bodyBlock(block: Block, snapshot: Snapshot) {
-  switch (block.type) {
-    case 'paragraph': return <p>{inlines(block.children, snapshot)}</p>;
-    case 'heading':
-      if (block.level === 2) return <h2>{block.text}</h2>;
-      if (block.level === 3) return <h3>{block.text}</h3>;
-      return <h4>{block.text}</h4>;
-    case 'list': {
-      const items = block.items.map((item, i) => <li key={i}>{inlines(item, snapshot)}</li>);
-      return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>;
-    }
-    case 'quote': return <blockquote>{inlines(block.children, snapshot)}{block.attribution ? <cite>{block.attribution}</cite> : null}</blockquote>;
-    case 'code': return <pre><code>{block.code}</code></pre>;
-    case 'image': return image(block.image, snapshot);
-  }
-}
-
-// Semantic wiring only; V2 templates, syntax highlighting and rich presentation follow in M04b.
 export default async function BlogPage({ params }: { params: RouteParams }) {
   const { locale, post, posts, settings, snapshot } = await route(params);
   return (
     <div className="flex-1 flex flex-col">
       <Header locale={locale} />
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-12 space-y-8 focus:outline-none">
-        {post ? <>
-          <Link href={`/${locale}/blog/`}>{settings.journalTitle}</Link>
-          <article data-published-article>
-            <h1 className="font-display text-3xl sm:text-5xl">{post.title}</h1>
-            <p>{post.excerpt}</p>
-            {post.cover ? image(post.cover, snapshot) : null}
-            <div className="space-y-6">{post.body.map((block, i) => <div key={i}>{bodyBlock(block, snapshot)}</div>)}</div>
-          </article>
-        </> : (
+        {post ? (
+          <ArticleView post={post} locale={locale as Locale} snapshot={snapshot} />
+        ) : (
           <BlogListing posts={posts} settings={settings} locale={locale as Locale} />
         )}
       </main>

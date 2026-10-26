@@ -35,7 +35,9 @@ function renderInlines(items: readonly Inline[], snapshot: Snapshot) {
 
 function renderImage(use: ImageUse, snapshot: Snapshot) {
   const media = snapshot.media.find(asset => asset.id === use.mediaId);
-  if (!media) return null;
+  if (!media) {
+    throw new Error('Invariant violation: referenced media asset not found in snapshot');
+  }
   const isDecorative = !use.alt;
   return (
     <figure className="my-6 space-y-2">

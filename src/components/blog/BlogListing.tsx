@@ -56,17 +56,6 @@ export default function BlogListing({ posts, settings, locale }: BlogListingProp
               {settings.journalEmptyText}
             </p>
           </div>
-
-          <div className="border-t border-[var(--color-border)] pt-6 space-y-2">
-            <p className="text-xs font-mono uppercase tracking-wider text-[var(--color-brick-deep)] font-semibold">
-              {isVi ? 'HẸN GẶP Ở BÀI ĐẦU TIÊN' : 'FIRST NOTE COMING'}
-            </p>
-            <p className="font-body text-sm text-[var(--text-muted)] leading-relaxed">
-              {isVi
-                ? 'Viết cho người thực sự cần đọc, không đăng chỉ để lấp chỗ trống.'
-                : 'Writing for those who actually read, not publishing just to fill empty space.'}
-            </p>
-          </div>
         </section>
       ) : (
         <section
