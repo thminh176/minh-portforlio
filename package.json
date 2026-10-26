@@ -23,7 +23,9 @@
     "test:content": "node --experimental-strip-types scripts/test-content-snapshot.mjs",
     "validate:content": "node --experimental-strip-types scripts/validate-content.mjs",
     "test:content:loader": "node --experimental-strip-types scripts/test-content-loader.mjs",
-    "test:content:routes": "node scripts/test-content-routes.mjs"
+    "test:content:routes": "node scripts/test-content-routes.mjs",
+    "test:content:navigation": "node --experimental-strip-types scripts/test-content-navigation.mjs",
+    "test:browser:navigation": "node scripts/verify-content-navigation.mjs"
   },
   "dependencies": {
     "next": "^16.4.1",
