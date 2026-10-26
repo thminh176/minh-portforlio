@@ -79,7 +79,7 @@ export default function ArticleView({ post, locale, snapshot }: ArticleViewProps
             {formatDate(post.publishedAt, locale)}
           </time>
           {post.tags && post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5" aria-label={isVi ? 'Thẻ bài viết' : 'Article tags'}>
+            <div role="group" className="flex flex-wrap gap-1.5" aria-label={isVi ? 'Thẻ bài viết' : 'Article tags'}>
               {post.tags.map(tag => (
                 <span
                   key={tag}
