@@ -8,6 +8,8 @@ import Footer from '@/components/Footer';
 import ContactForm from '@/components/ContactForm';
 import DirectContact from '@/components/DirectContact';
 import { getDictionary } from '@/i18n';
+import { loadSnapshot } from '@/lib/content';
+import { projectArtwork, selectHomeContent } from '@/lib/content/presentation';
 
 export function generateStaticParams() {
   return [{ locale: 'vi' }, { locale: 'en' }];
@@ -19,6 +21,8 @@ export default async function HomePage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  if (locale !== 'vi' && locale !== 'en') throw new Error('Unsupported Home locale');
+  const { profile, settings, featuredProjects, recentPosts } = selectHomeContent(await loadSnapshot(), locale);
   const isVi = locale === 'vi';
   const dict = getDictionary(locale);
 
@@ -32,7 +36,7 @@ export default async function HomePage({
         className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-8 py-8 space-y-20 sm:space-y-28 focus:outline-none"
       >
         {/* 1. Hero Section */}
-        <Hero locale={locale} />
+        <Hero locale={locale} profile={profile} />
 
         {/* 2. Work Section */}
         <section id="work" className="space-y-8 sm:space-y-12 scroll-mt-24">
@@ -46,13 +50,16 @@ export default async function HomePage({
           </div>
 
           <div className="space-y-12 sm:space-y-16">
-            <FeaturedMcpProject locale={locale} />
-            <FeaturedPortfolioProject locale={locale} />
+            {featuredProjects.map((project, index) => projectArtwork(project) === 'mcp' ? (
+              <FeaturedMcpProject key={project.id} locale={locale} project={project} position={index + 1} />
+            ) : (
+              <FeaturedPortfolioProject key={project.id} locale={locale} project={project} position={index + 1} showPortfolioArtwork={projectArtwork(project) === 'portfolio'} />
+            ))}
           </div>
         </section>
 
         {/* 3. Journal Section */}
-        <JournalIntro locale={locale} />
+        <JournalIntro locale={locale} settings={settings} posts={recentPosts} />
 
         {/* Contact Invitation */}
         <ContactInvitation locale={locale} />

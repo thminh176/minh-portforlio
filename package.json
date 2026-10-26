@@ -25,6 +25,7 @@
     "test:content:loader": "node --experimental-strip-types scripts/test-content-loader.mjs",
     "test:content:routes": "node scripts/test-content-routes.mjs",
     "test:content:navigation": "node --experimental-strip-types scripts/test-content-navigation.mjs",
+    "test:content:consumers": "node --experimental-strip-types scripts/test-content-consumers.mjs",
     "test:browser:navigation": "node scripts/verify-content-navigation.mjs"
   },
   "dependencies": {

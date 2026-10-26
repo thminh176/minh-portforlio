@@ -1,5 +1,5 @@
 import type { Dictionary } from '@/i18n/types';
-import { profileConfig } from '@/config/profile';
+import { getProfile } from '@/lib/content';
 import ContactForm from '@/components/ContactForm';
 import DirectContact from '@/components/DirectContact';
 
@@ -8,9 +8,10 @@ export interface ContactPageProps {
   dict: Dictionary;
 }
 
-export default function ContactPage({ locale, dict }: ContactPageProps) {
+export default async function ContactPage({ locale, dict }: ContactPageProps) {
   const isVi = locale === 'vi';
-  const profile = isVi ? profileConfig.vi : profileConfig.en;
+  if (locale !== 'vi' && locale !== 'en') throw new Error('Unsupported Contact locale');
+  const profile = await getProfile(locale);
   const kicker = isVi ? 'LIÊN HỆ' : 'CONTACT';
   const heading = isVi
     ? 'Bạn đang làm gì? Mình muốn nghe thử.'

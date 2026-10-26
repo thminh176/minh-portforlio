@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import DirectContact from '@/components/DirectContact';
 import Link from 'next/link';
 import { getDictionary } from '@/i18n';
-import { profileConfig } from '@/config/profile';
+import { getProfile } from '@/lib/content';
 import { siteConfig } from '@/config/site';
 
 export function generateStaticParams() {
@@ -64,7 +64,8 @@ export default async function AboutPage({
   const { locale } = await params;
   const isVi = locale === 'vi';
   const dict = getDictionary(locale);
-  const profile = isVi ? profileConfig.vi : profileConfig.en;
+  if (locale !== 'vi' && locale !== 'en') throw new Error('Unsupported About locale');
+  const profile = await getProfile(locale);
   const kicker = isVi ? 'VỀ MÌNH' : 'ABOUT';
 
   return (

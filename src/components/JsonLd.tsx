@@ -1,21 +1,21 @@
-import type { Locale } from '@/i18n/types';
 import { siteConfig } from '@/config/site';
-import { profileConfig } from '@/config/profile';
+import type { Profile } from '@/lib/content/types';
 
 interface JsonLdProps {
-  locale: Locale | string;
+  profile: Profile;
+  alternateName: string;
 }
 
-export default function JsonLd({ locale }: JsonLdProps) {
-  const isVi = locale === 'vi';
-  const personName = isVi ? siteConfig.author.vi : siteConfig.author.en;
-  const alternateName = isVi ? siteConfig.author.en : siteConfig.author.vi;
-  const bio = isVi ? profileConfig.vi.bioSummary : profileConfig.en.bioSummary;
+export function serializeJsonLd(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
+export default function JsonLd({ profile, alternateName }: JsonLdProps) {
 
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: personName,
+    name: profile.name,
     url: `${siteConfig.baseUrl}/`,
     inLanguage: ['vi', 'en'],
   };
@@ -23,21 +23,21 @@ export default function JsonLd({ locale }: JsonLdProps) {
   const personSchema = {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: personName,
+    name: profile.name,
     alternateName: alternateName,
     url: `${siteConfig.baseUrl}/`,
-    description: bio,
+    description: profile.bioSummary,
   };
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(personSchema) }}
       />
     </>
   );

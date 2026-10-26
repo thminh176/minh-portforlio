@@ -1,19 +1,13 @@
 import Link from 'next/link';
+import type { Profile } from '@/lib/content/types';
 
 interface HeroProps {
   locale: string;
+  profile: Profile;
 }
 
-export default function Hero({ locale }: HeroProps) {
+export default function Hero({ locale, profile }: HeroProps) {
   const isVi = locale === 'vi';
-
-  const identity = isVi ? 'Đàm Thiên Minh' : 'Thien Minh Dam';
-  const kicker = isVi
-    ? 'Đàm Thiên Minh / Web Developer'
-    : 'Thien Minh Dam / Web Developer';
-  const supporting = isVi
-    ? 'Mình chia sẻ các dự án cá nhân và ghi chép về quá trình học, làm web ở đây.'
-    : 'A place for my personal projects and notes on learning and building for the web.';
   const primaryCta = isVi ? 'Trao đổi với mình' : 'Get in touch';
   const secondaryCta = isVi ? 'Về mình' : 'About me';
 
@@ -27,12 +21,12 @@ export default function Hero({ locale }: HeroProps) {
       <div className="max-w-3xl flex flex-col gap-5 lg:gap-6">
         {/* Localized Mono Identity/Role Kicker (Mobile only < 1024px) */}
         <div className="lg:hidden font-mono text-xs sm:text-sm tracking-wider uppercase text-[var(--color-brick-deep)] font-medium">
-          {kicker}
+          {profile.hero.kicker}
         </div>
 
         {/* Large Identity Line (Desktop only >= 1024px) */}
         <div className="hidden lg:block font-display text-3xl sm:text-4xl lg:text-[44px] font-bold text-[var(--color-ink)] leading-tight tracking-tight">
-          {identity}
+          {profile.name}
         </div>
 
         {/* Short Brick Accent Rule (Desktop only >= 1024px) */}
@@ -43,24 +37,12 @@ export default function Hero({ locale }: HeroProps) {
 
         {/* Single Semantic H1: Multiline Narrative */}
         <h1 className="font-display text-[32px] leading-[1.18] sm:text-4xl sm:leading-tight md:text-5xl lg:text-[56px] lg:leading-[1.12] font-bold text-[var(--color-ink)] tracking-tight">
-          {isVi ? (
-            <>
-              <span className="block">Mình làm web.</span>{' '}
-              <span className="block">Đây là những gì</span>{' '}
-              <span className="block">mình đang xây.</span>
-            </>
-          ) : (
-            <>
-              <span className="block">I build for the web.</span>{' '}
-              <span className="block">Here&apos;s what I&apos;m</span>{' '}
-              <span className="block">working on.</span>
-            </>
-          )}
+          {profile.hero.headlineLines.map(line => <span className="block" key={line}>{line}</span>)}
         </h1>
 
         {/* Supporting Editorial Copy */}
         <p className="font-body text-sm sm:text-base lg:text-xl text-[var(--text-secondary)] leading-relaxed max-w-2xl pt-1 sm:pt-2">
-          {supporting}
+          {profile.hero.supporting}
         </p>
 
         {/* Real CTAs */}

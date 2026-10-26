@@ -1,17 +1,16 @@
+import Link from 'next/link';
+import type { Post, SiteSettings } from '@/lib/content/types';
+
 interface JournalIntroProps {
   locale: string;
+  settings: SiteSettings;
+  posts: readonly Post[];
 }
 
-export default function JournalIntro({ locale }: JournalIntroProps) {
+export default function JournalIntro({ locale, settings, posts }: JournalIntroProps) {
   const isVi = locale === 'vi';
 
   const kicker = isVi ? 'GHI CHÉP' : 'JOURNAL';
-  const heading = isVi
-    ? 'Ghi chép về việc học và làm web'
-    : 'Notes on learning and building for the web';
-  const emptyNote = isVi
-    ? 'Mình chưa đăng bài nào. Khi có ghi chép đủ rõ, mình sẽ chia sẻ ở đây.'
-    : "No posts yet. I'll share notes here when they're ready.";
 
   return (
     <section id="journal" className="space-y-6 sm:space-y-8 scroll-mt-24 pt-12 sm:pt-16 border-t border-[var(--color-border)]">
@@ -20,13 +19,26 @@ export default function JournalIntro({ locale }: JournalIntroProps) {
           {kicker}
         </div>
         <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--color-ink)]">
-          {heading}
+          {settings.journalTitle}
         </h2>
       </div>
 
-      <p className="font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
-        {emptyNote}
-      </p>
+      {posts.length ? (
+        <div className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+          {posts.map(post => (
+            <article key={post.id} className="py-5 space-y-2">
+              <h3 className="font-display text-lg sm:text-xl font-bold text-[var(--color-ink)]">
+                <Link href={`/${locale}/blog/${post.slug}/`}>{post.title}</Link>
+              </h3>
+              <p className="font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">{post.excerpt}</p>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="font-body text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
+          {settings.journalEmptyText}
+        </p>
+      )}
     </section>
   );
 }

@@ -1,14 +1,17 @@
 import Link from 'next/link';
 import { getDictionary } from '@/i18n';
-import { profileConfig } from '@/config/profile';
+import { siteConfig } from '@/config/site';
 import { getPublishedSocialLinks } from '@/config/socials';
+import { getProfile } from '@/lib/content';
+import type { Locale } from '@/lib/content/types';
 
 interface FooterProps {
   locale: string;
 }
 
-export default function Footer({ locale }: FooterProps) {
-  const profile = locale === 'vi' ? profileConfig.vi : profileConfig.en;
+export default async function Footer({ locale }: FooterProps) {
+  if (locale !== 'vi' && locale !== 'en') throw new Error('Unsupported Footer locale');
+  const profile = await getProfile(locale as Locale);
   const dict = getDictionary(locale);
   const currentYear = new Date().getFullYear();
   const publishedSocials = getPublishedSocialLinks();
@@ -68,7 +71,7 @@ export default function Footer({ locale }: FooterProps) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-[var(--text-secondary)]">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-left">
             <span className="font-mono text-xs font-semibold tracking-wider text-[var(--color-brick-deep)]">
-              {profileConfig.domain}
+              {new URL(siteConfig.baseUrl).hostname}
             </span>
             <span className="text-[var(--color-border)] select-none" aria-hidden="true">
               /

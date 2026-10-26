@@ -3,6 +3,7 @@ import '../globals.css';
 import SkipLink from '@/components/SkipLink';
 import JsonLd from '@/components/JsonLd';
 import { siteConfig } from '@/config/site';
+import { loadSnapshot } from '@/lib/content';
 
 export function generateStaticParams() {
   return [{ locale: 'vi' }, { locale: 'en' }];
@@ -80,6 +81,10 @@ export default async function LocaleRootLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  if (locale !== 'vi' && locale !== 'en') throw new Error('Unsupported layout locale');
+  const snapshot = await loadSnapshot();
+  const profile = snapshot.profiles.find(record => record.locale === locale)!;
+  const alternateName = snapshot.profiles.find(record => record.locale !== locale)!.name;
 
   return (
     <html lang={locale} className="dark" suppressHydrationWarning>
@@ -87,7 +92,7 @@ export default async function LocaleRootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <JsonLd locale={locale} />
+        <JsonLd profile={profile} alternateName={alternateName} />
         <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] transition-colors lg:pl-64">
           <SkipLink locale={locale} />
           {children}

@@ -1,20 +1,18 @@
+import Link from 'next/link';
+import type { Project } from '@/lib/content/types';
+
 interface FeaturedMcpProjectProps {
   locale: string;
+  project: Project;
+  position: number;
 }
 
-export default function FeaturedMcpProject({ locale }: FeaturedMcpProjectProps) {
+export default function FeaturedMcpProject({ locale, project, position }: FeaturedMcpProjectProps) {
   const isVi = locale === 'vi';
-
-  const title = 'MCP Project Assistant';
-  const description = isVi
-    ? 'MCP server chạy local giúp AI đọc mã, tìm kiếm và xem Git diff trong workspace đã chọn. Thay đổi được xem trước trước khi áp dụng.'
-    : 'A local MCP server for reading code, searching and reviewing Git diffs in a selected workspace, with previews before edits are applied.';
-
-  const repoUrl = 'https://github.com/thminh176/mcp-project-assistant';
   const repoLabel = isVi ? 'Xem mã nguồn trên GitHub' : 'View source code on GitHub';
   const repoAriaLabel = isVi
-    ? 'MCP Project Assistant - Xem mã nguồn trên GitHub (mở trong tab mới)'
-    : 'MCP Project Assistant - View source code on GitHub (opens in new tab)';
+    ? `${project.title} - Xem mã nguồn trên GitHub (mở trong tab mới)`
+    : `${project.title} - View source code on GitHub (opens in new tab)`;
 
   const diagramAriaLabel = isVi
     ? 'Sơ đồ năng lực MCP: Đọc mã, Xem diff, Áp dụng thay đổi'
@@ -24,7 +22,7 @@ export default function FeaturedMcpProject({ locale }: FeaturedMcpProjectProps) 
     <article className="space-y-3">
       {/* Mono Ledger */}
       <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)]">
-        <span>REPOSITORY / 01</span>
+        <span>REPOSITORY / {String(position).padStart(2, '0')}</span>
       </div>
 
       {/* Dark Graphite MCP Panel */}
@@ -33,18 +31,16 @@ export default function FeaturedMcpProject({ locale }: FeaturedMcpProjectProps) 
           {/* Main Content (Left) */}
           <div className="lg:col-span-8 space-y-4">
             <h3 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              {title}
+              <Link href={`/${locale}/projects/${project.slug}/`}>{project.title}</Link>
             </h3>
 
             <p className="font-body text-sm sm:text-base text-[var(--color-dark-copy)] leading-relaxed max-w-xl">
-              {description}
+              {project.summary}
             </p>
 
             {/* Sourced Tech Stack */}
             <div className="pt-2 sm:pt-4 flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-mono text-[var(--color-dark-copy)]">
-              <span>TypeScript</span>
-              <span>MCP SDK</span>
-              <span>Windows / WSL</span>
+              {project.technologies.map(technology => <span key={technology}>{technology}</span>)}
             </div>
           </div>
 
@@ -75,7 +71,7 @@ export default function FeaturedMcpProject({ locale }: FeaturedMcpProjectProps) 
         {/* Bottom Rule and GitHub Link */}
         <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between flex-wrap gap-4">
           <a
-            href={repoUrl}
+            href={project.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={repoAriaLabel}
