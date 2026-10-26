@@ -64,7 +64,7 @@ export default function HeaderClient({ locale, activeRoute: fallback = 'home', n
         <Link
           href={`/${locale}/`}
           className="min-h-[44px] flex items-center gap-2 group rounded-md p-1 -m-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
-          aria-label={`${name} — ${dict.common.home}`}
+          aria-label={`TM. ${name} — ${dict.common.home}`}
         >
           <span className="font-display font-bold text-2xl tracking-tight text-[var(--color-ink)] group-hover:text-[var(--color-brick-deep)] transition-colors">
             TM.
@@ -188,18 +188,17 @@ export default function HeaderClient({ locale, activeRoute: fallback = 'home', n
           <Link
             href={`/${locale}/`}
             className="group block space-y-3 rounded-lg p-1 -m-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
-            aria-label={`${name} — ${dict.common.home}`}
+            aria-label={`DTM — ${name}, ${role} — ${dict.common.home}`}
           >
             {/* Monogram Box */}
             <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/15 flex items-center justify-center font-mono font-bold text-sm text-[var(--color-dark-copy)] group-hover:border-[var(--color-brick)] transition-colors shadow-sm">
               DTM
-            </div>
-
+            </div>{' '}
             {/* Authentic Identity */}
             <div className="space-y-1">
               <div className="font-display font-bold text-lg text-white tracking-tight leading-snug group-hover:text-[var(--color-dark-copy)] transition-colors">
                 {name}
-              </div>
+              </div>{' '}
               <div className="font-mono text-xs text-[var(--color-dark-copy)]/70 uppercase tracking-wider">
                 {role}
               </div>
