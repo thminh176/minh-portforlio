@@ -124,6 +124,7 @@ async function build(label, snapshot, expectedExit = 0, expectedRule) {
       assert.ok(html.includes('content="noindex, nofollow"') || process.env.NEXT_PUBLIC_SITE_ENV === 'production');
       const alternates = [...html.matchAll(/<link rel="alternate" hrefLang="([^"]+)" href="([^"]+)"/g)].map(match => [match[1], match[2]]);
       const expectedAlternates = [record, ...record.translations.map(ref => data.projects.find(item => item.id === ref.recordId))].map(item => [item.locale, `https://damthienminh.id.vn/${item.locale}/projects/${item.slug}/`]);
+      expectedAlternates.push(['x-default', (expectedAlternates.find(([locale]) => locale === 'en') ?? expectedAlternates.find(([locale]) => locale === 'vi'))[1]]);
       assert.deepEqual(alternates.sort(), expectedAlternates.sort(), 'only actual project translations, including differing slugs');
       assert.ok(!html.includes('<time'), 'snapshot migration timestamps are not project launch dates');
       assert.ok(!html.includes('<script>routeFixtureMustStayInert()'));
@@ -207,6 +208,7 @@ try {
     assert.ok(html.includes('content="noindex, nofollow"') || process.env.NEXT_PUBLIC_SITE_ENV === 'production');
     const alternates = [...html.matchAll(/<link rel="alternate" hrefLang="([^"]+)" href="([^"]+)"/g)].map(match => [match[1], match[2]]);
     const expected = [record, ...record.translations.map(ref => candidate.posts.find(item => item.id === ref.recordId))].map(item => [item.locale, `https://damthienminh.id.vn/${item.locale}/blog/${item.slug}/`]);
+    expected.push(['x-default', (expected.find(([locale]) => locale === 'en') ?? expected.find(([locale]) => locale === 'vi'))[1]]);
     assert.deepEqual(alternates.sort(), expected.sort(), 'only actual translated article URLs');
   }
   const linkedBlog = await readFile(path.join(stage, 'out/vi/blog', vi.slug, 'index.html'), 'utf8');
