@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "siteId": "dtm",
-  "revision": "cms-9f4ae9e2-83d4-44aa-8399-bad113be3490",
-  "exportedAt": "2026-10-27T09:33:15Z",
+  "revision": "cms-1c76aab2-fae0-4366-bcaf-fc68468a80f0",
+  "exportedAt": "2026-10-27T09:49:37Z",
   "locales": [
     "vi",
     "en"
@@ -15,8 +15,8 @@
       "publishedAt": "2026-10-25T18:25:04Z",
       "updatedAt": "2026-10-25T18:25:04Z",
       "name": "Đàm Thiên Minh",
-      "role": "Web Developer",
-      "tagline": "Mình làm web và chia sẻ các dự án cá nhân cùng ghi chép học tập.",
+      "role": "Developer",
+      "tagline": "Developer - Đáy của mọi nghề",
       "bioSummary": "Mình làm các dự án web, có kinh nghiệm triển khai hạ tầng và đang học thêm về backend, DevOps.",
       "aboutStory": [
         "Mình là Minh. Mình làm các dự án web và chia sẻ ghi chép về quá trình học, xây dựng chúng tại đây.",
@@ -89,44 +89,7 @@
       "recentPostLimit": 3
     }
   ],
-  "posts": [
-    {
-      "id": "post-9aada7de-7a14-4e73-9e7a-1436b3a87b2b",
-      "locale": "vi",
-      "status": "published",
-      "title": "ĐTM",
-      "slug": "abc-test",
-      "publishedAt": "2026-10-27T08:24:45Z",
-      "updatedAt": "2026-10-27T08:25:00Z",
-      "translationGroup": "post-9aada7de-7a14-4e73-9e7a-1436b3a87b2b",
-      "translations": [],
-      "metadata": {
-        "title": "no",
-        "description": "no"
-      },
-      "body": [
-        {
-          "type": "paragraph",
-          "children": [
-            {
-              "type": "text",
-              "text": "no no"
-            }
-          ]
-        }
-      ],
-      "related": [],
-      "excerpt": "no",
-      "tags": [
-        "no"
-      ],
-      "cover": {
-        "mediaId": "media-d0643032924aa2d033b1725e100469946b1b4c4159a8724b5f6429181f192494",
-        "decorative": false,
-        "alt": "no"
-      }
-    }
-  ],
+  "posts": [],
   "projects": [
     {
       "id": "project-mcp-en",
@@ -291,13 +254,5 @@
       "sourceUrl": "https://github.com/thminh176/minh-portforlio"
     }
   ],
-  "media": [
-    {
-      "id": "media-d0643032924aa2d033b1725e100469946b1b4c4159a8724b5f6429181f192494",
-      "path": "/media/content/d0643032924aa2d033b1725e100469946b1b4c4159a8724b5f6429181f192494.webp",
-      "mimeType": "image/webp",
-      "width": 1280,
-      "height": 960
-    }
-  ]
+  "media": []
 }
