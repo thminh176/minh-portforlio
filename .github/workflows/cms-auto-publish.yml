@@ -1,0 +1,59 @@
+name: CMS content promotion
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [cms/content-review-dtm]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cms-content-promotion-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      # workflow_run and all executed scripts come from trusted main, not the review head.
+      - name: Checkout trusted main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Guard and prepare content-only merge
+        id: prepare
+        run: node scripts/cms-promote.mjs prepare .github/content-publishing.json "$RUNNER_TEMP/cms-promotion.json"
+      - name: Setup pnpm
+        if: steps.prepare.outputs.promote == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.11.2
+          run_install: false
+      # Do not restore a cache produced by an untrusted review workflow.
+      - name: Install trusted dependencies
+        if: steps.prepare.outputs.promote == 'true'
+        run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/cms-pnpm-store"
+      - name: Validate the actual merged candidate
+        if: steps.prepare.outputs.promote == 'true'
+        run: |
+          pnpm run ci
+          pnpm run test:content
+          pnpm run test:content:loader
+          pnpm run test:content:navigation
+      - name: Commit and non-force push tested merge
+        if: steps.prepare.outputs.promote == 'true'
+        run: node scripts/cms-promote.mjs finish .github/content-publishing.json "$RUNNER_TEMP/cms-promotion.json"

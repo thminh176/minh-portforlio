@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "siteId": "dtm",
+  "repository": "thminh176/minh-portforlio",
+  "mainBranch": "main",
+  "ciWorkflowName": "CI",
+  "ciWorkflowPath": ".github/workflows/ci.yml"
+}
