@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, cms/content-review-dtm]
   pull_request:
     branches: [main, master]
 
@@ -35,6 +35,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Test trusted content promotion guard
+        run: node --test scripts/test-cms-promote.mjs
 
       - name: Audit tracked files & secrets
         run: pnpm run check:secrets
