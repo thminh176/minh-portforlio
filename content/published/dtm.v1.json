@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "siteId": "dtm",
-  "revision": "dtm-initial-20261026",
-  "exportedAt": "2026-10-25T18:25:04Z",
+  "revision": "cms-851e331a-cfeb-4c24-af5e-23b7591c87c5",
+  "exportedAt": "2026-10-27T08:25:33Z",
   "locales": [
     "vi",
     "en"
@@ -25,9 +25,7 @@
       "hero": {
         "kicker": "Đàm Thiên Minh / Web Developer",
         "headlineLines": [
-          "Mình làm web.",
-          "Đây là những gì",
-          "mình đang xây."
+          "Developer - Đáy của mọi nghề"
         ],
         "supporting": "Mình chia sẻ các dự án cá nhân và ghi chép về quá trình học, làm web ở đây."
       }
@@ -91,7 +89,44 @@
       "recentPostLimit": 3
     }
   ],
-  "posts": [],
+  "posts": [
+    {
+      "id": "post-9aada7de-7a14-4e73-9e7a-1436b3a87b2b",
+      "locale": "vi",
+      "status": "published",
+      "title": "ĐTM",
+      "slug": "abc-test",
+      "publishedAt": "2026-10-27T08:24:45Z",
+      "updatedAt": "2026-10-27T08:25:00Z",
+      "translationGroup": "post-9aada7de-7a14-4e73-9e7a-1436b3a87b2b",
+      "translations": [],
+      "metadata": {
+        "title": "no",
+        "description": "no"
+      },
+      "body": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "no no"
+            }
+          ]
+        }
+      ],
+      "related": [],
+      "excerpt": "no",
+      "tags": [
+        "no"
+      ],
+      "cover": {
+        "mediaId": "media-d0643032924aa2d033b1725e100469946b1b4c4159a8724b5f6429181f192494",
+        "decorative": false,
+        "alt": "no"
+      }
+    }
+  ],
   "projects": [
     {
       "id": "project-mcp-en",
@@ -256,5 +291,13 @@
       "sourceUrl": "https://github.com/thminh176/minh-portforlio"
     }
   ],
-  "media": []
+  "media": [
+    {
+      "id": "media-d0643032924aa2d033b1725e100469946b1b4c4159a8724b5f6429181f192494",
+      "path": "/media/content/d0643032924aa2d033b1725e100469946b1b4c4159a8724b5f6429181f192494.webp",
+      "mimeType": "image/webp",
+      "width": 1280,
+      "height": 960
+    }
+  ]
 }
